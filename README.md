@@ -163,6 +163,9 @@ docker compose logs nginx
 
 # Padron Import Process
 
+
+python manage.py upload_signatures  --settings=core.settings.development output.json Nessus
+
 ## Overview
 This process imports a large JSON file containing Padron (electoral roll) data into the Django application's database. It uses a streaming parser to efficiently handle large files without excessive memory usage.
 
