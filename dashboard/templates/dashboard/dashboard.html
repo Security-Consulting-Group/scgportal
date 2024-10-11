@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="dashboard-placeholder">
+    <div class="placeholder-card">
+        <div class="placeholder-icon">
+            <i class="fas fa-tools fa-3x"></i>
+        </div>
+        <h2>Dashboard Coming Soon!</h2>
+        <p>We're working hard to bring you an amazing dashboard experience.</p>
+        <p>Stay tuned for exciting updates and new features!</p>
+    </div>
+</div>
+
+<style>
+    .dashboard-placeholder {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 70vh;
+        background-color: #f8f9fa;
+    }
+    .placeholder-card {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 2rem;
+        text-align: center;
+        max-width: 400px;
+        width: 100%;
+        animation: fadeInUp 0.5s ease-out;
+    }
+    .placeholder-icon {
+        color: #007bff;
+        margin-bottom: 1rem;
+    }
+    h2 {
+        color: #333;
+        margin-bottom: 1rem;
+    }
+    p {
+        color: #666;
+        line-height: 1.6;
+    }
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+{% endblock %}

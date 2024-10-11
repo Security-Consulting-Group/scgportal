@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Delete Contract</h2>
+<hr>
+<p>Are you sure you want to delete the contract "{{ object.contract_id }}"?</p>
+<form method="post">
+    {% csrf_token %}
+    <hr>
+    <div class="right-aligned mt-3">
+    <button type="submit" class="btn btn-danger">Confirm Delete</button>
+    <a href="{% url 'contracts:contract-detail' customer_id=object.customer.customer_id contract_id=object.contract_id %}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

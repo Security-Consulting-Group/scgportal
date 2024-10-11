@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<h2>{% if form.instance.pk %}Edit{% else %}Create{% endif %} User</h2>
+
+<hr>
+
+{% if messages %}
+<div id="message-container">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+</div>
+
+<script>
+    setTimeout(function() {
+        var messageContainer = document.getElementById('message-container');
+        if (messageContainer) {
+            messageContainer.style.display = 'none';
+        }
+    }, 5000);
+</script>
+{% endif %}
+
+<form method="post">
+    {% csrf_token %}
+    <div class="row">
+        <div class="flex-container">
+            <div class="flex-item">
+                <div class="col-md-8">
+                    {{ form.first_name|as_crispy_field }}
+                    {{ form.last_name|as_crispy_field }}
+                    {{ form.email|as_crispy_field }}
+                    {% if form.type %}
+                        {{ form.type|as_crispy_field }}
+                    {% endif %}
+                </div>
+            </div>
+            {% if form.customers %}
+            <div class="flex-item scrollable-section">
+                {{ form.customers|as_crispy_field }}
+            </div>
+            {% endif %}
+            {% if form.groups %}
+            <div class="flex-item scrollable-section">
+                {{ form.groups|as_crispy_field }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% for field in form %}
+        {% if field.name not in 'first_name,last_name,email,customers,groups,type' %}
+            {{ field|as_crispy_field }}
+        {% endif %}
+    {% endfor %}
+    <hr>
+    <div class="right-aligned mt-3">
+        <button type="submit" class="btn btn-primary">Save</button>
+    
+        {% if request.GET.customer %}
+        <a href="{% url 'users:user-list' customer_id=request.GET.customer %}" class="btn btn-secondary">Cancel</a>
+        {% elif form.customer %}
+            <a href="{% url 'users:user-list' customer_id=form.customer.customer_id %}" class="btn btn-secondary">Cancel</a>
+        {% else %}
+            <a href="{% url 'users:user-list' customer_id=request.selected_customer.customer_id %}" class="btn btn-secondary">Cancel</a>
+        {% endif %}
+    </div>
+</form>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .flex-container {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: stretch;
+    }
+
+    .flex-item {
+        flex: 1;
+        padding: 10px;
+        min-width: 300px;
+    }
+
+    .flex-item:not(:last-child) {
+        border-right: 1px solid #ccc;
+    }
+
+    .scrollable-section {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    @media (max-width: 768px) {
+        .flex-item {
+            flex-basis: 100%;
+        }
+
+        .flex-item:not(:last-child) {
+            border-right: none;
+            border-bottom: 1px solid #ccc;
+        }
+    }
+</style>
+{% endblock %}

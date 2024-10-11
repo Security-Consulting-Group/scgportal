@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Users</h2>
+<hr>
+
+{% if messages %}
+<div id="message-container">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+</div>
+
+<script>
+    setTimeout(function() {
+        var messageContainer = document.getElementById('message-container');
+        if (messageContainer) {
+            messageContainer.style.display = 'none';
+        }
+    }, 5000);
+</script>
+{% endif %}
+
+{% if perms.users.add_customuser or perms.users.add_customer_user %}
+<a href="{% url 'users:user-create' customer_id=request.selected_customer.customer_id %}" class="btn btn-primary mb-3">Create New User</a>
+{% endif %}
+<table class="table">
+    <thead>
+        <tr>
+            <th>Email</th>
+            <th>Name</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+        <tr>
+            <td><a href="{% url 'users:user-update' customer_id=request.selected_customer.customer_id pk=user.pk %}">{{ user.email }}</a></td>
+            <td>{{ user.get_full_name }}</td>
+            <td>
+                {% if user.is_active %}
+                <form method="post" action="{% url 'users:user-deactivate' customer_id=request.selected_customer.customer_id pk=user.pk %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-success">Active</button>
+                </form>
+                {% else %}
+                <form method="post" action="{% url 'users:user-activate' customer_id=request.selected_customer.customer_id pk=user.pk %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-warning">Inactive</button>
+                </form>
+                {% endif %}
+            </td>
+            <td>
+                {% if perms.users.change_customuser or perms.users.change_customer_user %}
+                <a href="{% url 'users:reset-user-password' customer_id=request.selected_customer.customer_id pk=user.pk %}" class="btn btn-warning btn-sm">Reset Password</a>
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="5">No users found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

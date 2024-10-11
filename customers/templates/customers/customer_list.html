@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load dashboard_tags %}
+
+{% block content %}
+<h2>Accounts</h2>
+<hr>
+
+{% if messages %}
+<div id="message-container">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+</div>
+
+<script>
+    setTimeout(function() {
+        var messageContainer = document.getElementById('message-container');
+        if (messageContainer) {
+            messageContainer.style.display = 'none';
+        }
+    }, 5000);
+</script>
+{% endif %}
+
+{% if perms.customers.add_customer %}
+<a href="{% url 'customers:customer-create' %}" class="btn btn-primary mb-3">Add New Account</a>
+{% endif %}
+<table class="table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Created on</th>
+            <th>Type</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for customer in customers %}
+        <tr>
+            <td>{{ customer.customer_name }}</td>
+            <td>{{ customer.created_on }}</td>
+            <td>{{ customer.customer_type }}</td>
+            <td>
+                <a href="{% url 'dashboard:dashboard' customer_id=customer.customer_id %}" class="btn btn-sm btn-primary">Manage</a>
+            </td>
+        </tr>
+    {% empty %}
+        <tr>
+            <td colspan="4">No Accounts found.</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/customer_list.js' %}"></script>
+{% endblock %}

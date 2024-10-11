@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block content %}
+<h2>Upload Security Report</h2>
+<hr>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form|crispy }}
+<hr>
+    <div class="right-aligned">
+        <button type="submit" class="btn btn-primary">Upload</button>
+        <a href="{% url 'sec_reports:report-list' customer_id=request.selected_customer.customer_id %}" class="btn btn-secondary">Cancel</a>
+    </div>
+</form>
+{% endblock %}
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const contractSelect = document.querySelector('#id_contract');
+        const reportTypeSelect = document.querySelector('#id_report_type');
+    
+        contractSelect.addEventListener('change', function() {
+            const contractId = this.value;
+            const currentUrl = window.location.pathname;
+            fetch(`${currentUrl}?contract_id=${contractId}`)
+                .then(response => response.json())
+                .then(data => {
+                    reportTypeSelect.innerHTML = '<option value="">---------</option>';
+                    data.services.forEach(service => {
+                        const option = document.createElement('option');
+                        option.value = service.id;
+                        option.textContent = service.service_name;  // Changed from name to service_name
+                        reportTypeSelect.appendChild(option);
+                    });
+                });
+        });
+    });
+    </script>
+{% endblock%}

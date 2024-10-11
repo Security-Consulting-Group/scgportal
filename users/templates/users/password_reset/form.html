@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block content %}
+
+<h2>Reset Password</h2>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.email.as_hidden }}
+
+    <p>Are you sure you want to reset the password for {{ form.email.value }}?</p>
+
+    <button type="submit" class="btn btn-primary">Reset Password</button>
+    <a href="{% url 'users:user-list' customer_id=request.selected_customer.customer_id %}" class="btn btn-secondary">Cancel</a>
+</form>
+
+{% endblock %}

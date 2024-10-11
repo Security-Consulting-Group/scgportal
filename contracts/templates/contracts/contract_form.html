@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block content %}
+<h2>{% if form.instance.pk %}Edit{% else %}Create{% endif %} Contract</h2>
+<hr>
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+<form method="post">
+    {% csrf_token %}
+    <div class="row">
+        <div class="col-md-4">
+            {{ form.contract_start_date|as_crispy_field }}
+        </div>
+        <div class="col-md-4">
+            {{ form.contract_end_date|as_crispy_field }}
+        </div>
+        {% if form.instance.pk %}
+        <div class="col-md-4">
+            {{ form.contract_status|as_crispy_field }}
+        </div>
+        {% endif %}
+    </div>
+    <div class="row">
+        <div class="col-md-4">
+            {{ form.discount|as_crispy_field }}
+        </div>
+        <div class="col-md-4">
+            {{ form.taxes|as_crispy_field }}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-8">
+            {{ form.contract_notes|as_crispy_field }}
+        </div>
+    </div>
+    <h3>Services</h3>
+    {{ services.management_form }}
+    <div id="service-forms">
+        {% for service_form in services.forms %}
+            <div class="service-form">
+                <div class="row">
+                    <div class="col-md-4">
+                        {{ service_form.id }}
+                        {{ service_form.service|as_crispy_field }}
+                    </div>
+                    <div class="col-md-1">
+                        {{ service_form.quantity|as_crispy_field }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ service_form.discount|as_crispy_field }}
+                    </div>
+                    <div class="col-md-1">
+                        {% if services.can_delete %}
+                            {{ service_form.DELETE|as_crispy_field }}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    <button type="button" id="add-service" class="btn btn-secondary">Add Service</button>
+    <hr>
+    <div class="right-aligned mt-3">
+        <button type="submit" class="btn btn-primary">Save</button>
+        {% if form.instance.pk %}
+            <a href="{% url 'contracts:contract-detail' customer_id=request.selected_customer.customer_id contract_id=form.instance.contract_id %}" class="btn btn-secondary">Cancel</a>
+        {% else %}
+            <a href="{% url 'contracts:contract-list' customer_id=request.selected_customer.customer_id %}" class="btn btn-secondary">Cancel</a>
+        {% endif %}
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const addServiceButton = document.getElementById('add-service');
+        const serviceForms = document.getElementById('service-forms');
+        let totalFormsInput = document.querySelector('input[name$="-TOTAL_FORMS"]');
+        
+        if (!totalFormsInput) {
+            totalFormsInput = document.querySelector('input[name$="TOTAL_FORMS"]');
+        }
+    
+        console.log('Add Service Button:', addServiceButton);
+        console.log('Service Forms Container:', serviceForms);
+        console.log('Total Forms Input:', totalFormsInput);
+    
+        if (!addServiceButton) console.error("'add-service' button not found");
+        if (!serviceForms) console.error("'service-forms' container not found");
+        if (!totalFormsInput) console.error("TOTAL_FORMS input not found");
+    
+        if (addServiceButton && serviceForms && totalFormsInput) {
+            addServiceButton.addEventListener('click', function() {
+                const formIdx = parseInt(totalFormsInput.value);
+                totalFormsInput.value = formIdx + 1;
+    
+                const emptyForm = serviceForms.querySelector('.service-form').cloneNode(true);
+                emptyForm.innerHTML = emptyForm.innerHTML.replace(/-\d+-/g, `-${formIdx}-`);
+                
+                // Clear input values
+                emptyForm.querySelectorAll('input, select').forEach(input => {
+                    input.value = '';
+                    if (input.type === 'checkbox') {
+                        input.checked = false;
+                    }
+                });
+
+                emptyForm.querySelector('input[name$="-quantity"]').value = '1';
+                serviceForms.appendChild(emptyForm);
+            });
+        } else {
+            console.error('Dynamic service form addition is disabled due to missing elements.');
+        }
+    });
+</script>
+{% endblock %}

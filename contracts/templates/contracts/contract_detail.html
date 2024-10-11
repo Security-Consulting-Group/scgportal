@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<h2 >Contract Details</h2>
+<hr>
+<div class="row">
+    <div class="col">
+        <dt>Contract ID:</dt>
+        <dd>{{ contract.contract_id }}</dd>
+    
+        <dt>Customer:</dt>
+        <dd>{{ contract.customer.customer_name }}</dd>
+    </div>
+    <div class="col">
+        <dt>Start Date:</dt>
+        <dd>{{ contract.contract_start_date }}</dd>
+        <dt>End Date:</dt>
+        <dd>{{ contract.contract_end_date }}</dd>
+    </div>
+    <div class="col">
+        <dt>Status:</dt>
+        <dd>{{ contract.get_contract_status_display }}</dd>
+    
+        <dt>Contract Notes:</dt>
+        <dd>{{ contract.contract_notes|linebreaks }}</dd>
+    </div>
+</div>
+<hr>
+<table class="table table-responsive table-striped">
+    <thead>
+        <tr>
+            <th>Service Name</th>
+            <th>Unit Price</th>
+            <th>Quantity</th>
+            <th>Price</th>
+            <th>Discount</th>
+            <th>Subtotal</th>
+            <th>Total (After Taxes)</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for contract_service in contract_services %}
+        <tr>
+            <td>{{ contract_service.service.service_name }}</td>
+            <td>${{ contract_service.service.service_price|floatformat:2 }}</td>
+            <td>{{ contract_service.quantity }}</td>
+            <td>${{ contract_service.subtotal|floatformat:2 }}</td>
+            <td>
+                {% if contract_service.discount %}
+                    {{ contract_service.discount|floatformat:2 }}%
+                {% else %}
+                    {{ contract.discount|default:"0"|floatformat:2 }}% (global)
+                {% endif %}
+            </td>
+            <td>${{ contract_service.discounted_subtotal|floatformat:2 }}</td>
+            <td>${{ contract_service.total|floatformat:2 }}</td>
+        </tr>
+    {% empty %}
+        <tr>
+            <td colspan="8">No services associated with this contract.</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+<h2>Totals</h2>
+<table class="table table-responsive table-striped">
+    <thead>
+        <tr>
+            <th>Contract Subtotal</th>
+            <th>Discount</th>
+            <th>Taxes ({{ contract.taxes|floatformat:2 }}%)</th>
+            <th>Contract Total</th>
+            <th>Pending Balance</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>${{ contract.sub_total|floatformat:2 }}</td>
+            <td>{{ contract.discount|default:"N/A" }}%</td>
+            <td>${{ contract.taxes_amount|floatformat:2 }}</td>
+            <td>${{ contract.total|floatformat:2 }}</td>
+            <td>${{ contract.balance|floatformat:2 }}</td>
+    </tbody>
+</table>
+<hr>
+<h2>Payments</h2>
+{% if perms.payments.add_payment %}
+<button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addPaymentModal">Add Payment</button>
+{% endif %}
+<table class="table">
+    <thead>
+        <tr>
+            <th>Invoice Number</th>
+            <th>Amount</th>
+            <th>Date</th>
+            <th>Method</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for payment in payments %}
+        <tr>
+            {% if perms.payments.view_payment %}
+            <td><a href="{% url 'payments:payment-detail' customer_id=contract.customer.customer_id pk=payment.id %}">{{ payment.invoice_number }}</a></td>
+            {% endif %}
+            <td>${{ payment.amount }}</td>
+            <td>{{ payment.payment_date }}</td>
+            <td>{{ payment.get_payment_method_display }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="5">No payments recorded yet.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Modal -->
+<div class="modal fade" id="addPaymentModal" tabindex="-1" aria-labelledby="addPaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+    <div class="modal-content">
+        <div class="modal-header">
+        <h5 class="modal-title" id="addPaymentModalLabel">Add Payment</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <form id="paymentForm" method="post" action="{% url 'payments:payment-create' customer_id=contract.customer.customer_id contract_id=contract.contract_id %}">
+                {% csrf_token %}
+                {{ payment_form|crispy }}
+            </form>
+        </div>
+        <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="submit" form="paymentForm" class="btn btn-primary">Add Payment</button>
+        </div>
+    </div>
+    </div>
+</div>
+<hr>
+<div class="right-aligned">
+    {% if perms.contracts.change_contract %}
+        <a href="{% url 'contracts:contract-update' customer_id=contract.customer.customer_id contract_id=contract.contract_id %}" class="btn btn-secondary mt-3">Edit Contract</a>
+    {% endif %}
+    {% if perms.contracts.delete_contract %}
+        <a href="{% url 'contracts:contract-delete' customer_id=contract.customer.customer_id contract_id=contract.contract_id %}" class="btn btn-danger mt-3">Delete Contract</a>
+    {% endif %}
+        <a href="{% url 'contracts:contract-list' customer_id=contract.customer.customer_id %}" class="btn btn-secondary mt-3">Back to Contracts</a>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const paymentForm = document.getElementById('paymentForm');
+    paymentForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        fetch(this.action, {
+            method: 'POST',
+            body: new FormData(this),
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': this.querySelector('input[name="csrfmiddlewaretoken"]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();  // Reload the page to show the new payment
+            } else {
+                // Handle errors, perhaps display them in the modal
+                console.error('Payment submission failed:', data.errors);
+                // You might want to display these errors to the user in the modal
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    });
+});
+</script>
+{% endblock %}

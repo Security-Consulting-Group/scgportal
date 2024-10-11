@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<h2>Contracts</h2>
+<hr>
+
+{% if messages %}
+<div id="message-container">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+</div>
+
+<script>
+    setTimeout(function() {
+        var messageContainer = document.getElementById('message-container');
+        if (messageContainer) {
+            messageContainer.style.display = 'none';
+        }
+    }, 5000);
+</script>
+{% endif %}
+
+{% if perms.contracts.add_contract %}
+    <a href="{% url 'contracts:contract-create' customer_id=request.selected_customer.customer_id %}" class="btn btn-primary">Create New Contract</a>
+{% endif %}
+<table class="table table-responsive">
+    <thead>
+        <tr>
+            <th>Contract ID</th>
+            <th>Customer</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Status</th>
+            <th>Total</th>
+            <th>Balance</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for contract in contracts %}
+        <tr>
+            <td><a href="{% url 'contracts:contract-detail' customer_id=selected_customer.customer_id contract_id=contract.contract_id %}">{{ contract.contract_id }}</a></td>
+            <td>{{ contract.customer.customer_name }}</td>
+            <td>{{ contract.contract_start_date }}</td>
+            <td>{{ contract.contract_end_date }}</td>
+            <td>{{ contract.get_contract_status_display }}</td>
+            <td>{{ contract.total }}</td>
+            <td>{{ contract.balance }}</td>
+        </tr>
+    {% empty %}
+        <tr>
+            <td colspan="7">No contracts found.</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

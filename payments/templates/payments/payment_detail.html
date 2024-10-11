@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Payment Details</h2>
+<hr>
+<div class="row">
+    <div class="col">
+        <dt>Invoice Number:</dt>
+        <dd>{{ payment.invoice_number }}</dd>
+        <dt>Contract:</dt>
+        <dd>{{ payment.contract.contract_id }}</dd>
+    </div>
+    <div class="col">
+        <dt>Amount:</dt>
+        <dd>${{ payment.amount }}</dd>
+        <dt>Payment Date:</dt>
+        <dd>{{ payment.payment_date }}</dd>
+    </div>
+    <div class="col">
+        <dt>Payment Method:</dt>
+        <dd>{{ payment.get_payment_method_display }}</dd>
+    </div>
+    <div class="row">
+        <div class="col">
+            <dt>Notes:</dt>
+            <dd>{{ payment.notes|default:"N/A"|linebreaks }}</dd>
+        </div>
+    </div>
+</div>
+<hr>
+<div class="right-aligned">
+    <a href="{% url 'contracts:contract-detail' customer_id=request.selected_customer.customer_id contract_id=payment.contract.contract_id %}" class="btn btn-secondary">Cancel</a>
+</div>
+{% endblock %}

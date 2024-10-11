@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load dashboard_tags %}
+
+{% block content %}
+<h2>Services</h2>
+<hr>
+<table class="table table-responsive">
+    <thead>
+        <tr>
+            <th>Service ID</th>
+            <th>Name</th>
+            <th>Is active</th>
+            <th>Price</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for service in services %}
+        <tr>
+            <td><a href="{% url 'services:service-detail' service.pk %}">{{ service.service_id }}</a></td>
+            <td>{{ service.service_name }}</td>
+            <td>{{ service.is_active }}</td>
+            <td>{{ service.service_price }}</td>
+        </tr>
+    {% empty %}
+        <tr>
+            <td colspan="4">No services found.</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+<hr>
+<div class="right-aligned mt-3">
+<a href="{% url 'services:service-create' %}" class="btn btn-primary mt-3">Add New Service</a>
+<a href="{% dashboard_url %}" class="btn btn-secondary mt-3">Cancel</a>
+</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<h1>{{ customer.customer_name }}</h1>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">Account Details</h5>
+        <p><strong>Account ID:</strong> {{ customer.customer_id }}</p>
+        <p><strong>Name:</strong> {{ customer.customer_name }}</p>
+        <p><strong>Created On:</strong> {{ customer.created_on }}</p>
+    </div>
+</div>
+
+<div class="mt-3">
+    <a href="{% url 'customers:customer-update' pk=customer.customer_id %}" class="btn btn-primary">Edit Account</a>
+    <a href="{% url 'customers:customer-delete' pk=customer.customer_id %}" class="btn btn-danger">Delete Account</a>
+    <a href="{% url 'customers:customer-list' %}" class="btn btn-secondary">Back to Account List</a>
+</div>
+{% endblock %}

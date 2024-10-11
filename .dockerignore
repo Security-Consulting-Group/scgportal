@@ -1,0 +1,28 @@
+# Ignore migration cache files
+# **/migrations/__pycache__/
+
+# Ignore other cache directories
+# **/__pycache__/
+
+# Other standard ignores
+*.pyc
+*.pyo
+*.mo
+*.db
+*.css.map
+*.egg-info
+*.sql.gz
+.cache
+.project
+.idea
+.pydevproject
+.idea/workspace.xml
+.DS_Store
+.git/
+.sass-cache
+.vagrant/
+dist/
+logs/
+node_modules/
+venv/
+*.md

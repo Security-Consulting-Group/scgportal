@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>{{ signature.plugin_name }}</h2>
+  <hr>
+  <p><strong>Plugin ID:</strong> {{ signature.id }}</p>
+  <p><strong>Severity:</strong> {{ signature.risk_factor }}</p>
+  <p><strong>Description:</strong> {{ signature.description }}</p>
+  <p><strong>Solution:</strong> {{ signature.solution }}</p>
+  <p><strong>Synopsis:</strong> {{ signature.synopsis }}</p>
+  <p><strong>See Also:</strong> <a href="{{ signature.see_also }}">{{ signature.see_also }}</a></p>
+
+  <p><strong>plugin_modification_date:</strong> {{ signature.plugin_modification_date }}</p>
+  <p><strong>scg_last_update:</strong> {{ signature.scg_last_update }}</p>
+
+
+  <p><strong>exploitability_ease:</strong> {{ signature.exploitability_ease }}</p>
+  <p><strong>cpe:</strong> {{ signature.cpe }}</p>
+  <p><strong>cvss_vector:</strong> {{ signature.cvss_vector }}</p>
+  <p><strong>cvss_base_score:</strong> {{ signature.cvss_base_score }}</p>
+  <p><strong>cve:</strong> {{ signature.cve }}</p>
+  <p><strong>vpr_score:</strong> {{ signature.vpr_score }}</p>
+  <p><strong>exploit_code_maturity:</strong> {{ signature.exploit_code_maturity }}</p>
+  <p><strong>epss_score:</strong> {{ signature.epss_score }}</p>
+  <p><strong>family_name:</strong> {{ signature.family_name }}</p>
+  <p><strong>scanner_type:</strong> {{ signature.scanner_type }}</p>
+  <p><strong>agent:</strong> {{ signature.agent }}</p>
+  <p><strong>cvss3_base_score:</strong> {{ signature.cvss3_base_score }}</p>
+  <p><strong>cvss3_vector:</strong> {{ signature.cvss3_vector }}</p>
+
+  <a href="{% url 'signatures:signature_update' signature.pk %}" class="btn btn-warning">Edit</a>
+  <a href="{% url 'signatures:signature_delete' signature.pk %}" class="btn btn-danger">Delete</a>
+  <a href="{% url 'signatures:signature_list' %}" class="btn btn-secondary">Back to List</a>
+{% endblock %}

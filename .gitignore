@@ -1,0 +1,40 @@
+# Python
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+# requirements.txt
+
+# Virtual Environment
+venv/
+*.venv
+env/
+.env
+*.env
+.python-version
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+database/
+**/migrations/*
+staticfiles/*
+
+# But don't ignore __init__.py files in migrations folders
+!**/migrations/__init__.py
+
+# IDE-specific files
+.vscode/
+.idea/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Other Files and Directories
+parsed_report/*
+plugin_ids.txt
+output.json
+list_plugins.json

@@ -1,0 +1,32 @@
+services:
+  backend:
+    build: .
+    restart: always
+    expose:
+      - "8000"
+    volumes:
+      - .:/app
+      - ./staticfiles:/app/staticfiles
+      - /var/certbot/conf:/etc/letsencrypt/:ro
+    env_file: .env_prod
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./staticfiles:/app/staticfiles
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+      - /var/certbot/conf:/etc/letsencrypt:ro
+    depends_on:
+      - backend
+
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - /var/certbot/conf:/etc/letsencrypt/:rw
+      - /var/certbot/www/:/var/www/certbot/:rw
+    depends_on:
+      - nginx
