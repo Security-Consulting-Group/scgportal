@@ -21,16 +21,20 @@
     - [View Nginx Logs](#view-nginx-logs)
     - [Debug Steps](#debug-steps)
   - [Notes](#notes)
-- [Padron Import Process](#padron-import-process)
-  - [Overview](#overview-1)
-  - [Prerequisites](#prerequisites)
-  - [Model](#model)
-  - [Import Command](#import-command)
-  - [Usage](#usage)
-  - [Process](#process)
-  - [Notes](#notes-1)
-  - [PadronSearchView](#padronsearchview)
-  - [Maintenance](#maintenance)
+- [Nessus Processes](#nessus-processes)
+  - [1. Nessus Plugin Converter Process](#1-nessus-plugin-converter-process)
+    - [Overview](#overview-1)
+    - [Prerequisites](#prerequisites)
+    - [Usage](#usage)
+  - [2. Nessus Signature Upload Process](#2-nessus-signature-upload-process)
+    - [Overview](#overview-2)
+    - [Prerequisites](#prerequisites-1)
+    - [Import Command](#import-command)
+    - [Usage](#usage-1)
+  - [3. Nessus Scan Parser Process (convert from .nessus to .json)](#3-nessus-scan-parser-process-convert-from-nessus-to-json)
+    - [Overview](#overview-3)
+    - [Prerequisites](#prerequisites-2)
+    - [Usage](#usage-2)
 
 ## Overview
 This guide covers the deployment of a Django application using Docker, including static file serving, SSL certificate management, and key maintenance tasks.
@@ -161,93 +165,76 @@ docker compose logs nginx
 - Monitor server resources during high-traffic periods
 - Update SSL certificates before expiration (auto-renewal should handle this)
 
-# Padron Import Process
 
+# Nessus Processes
 
-python manage.py upload_signatures  --settings=core.settings.development output.json Nessus
+## 1. Nessus Plugin Converter Process
 
-## Overview
-This process imports a large JSON file containing Padron (electoral roll) data into the Django application's database. It uses a streaming parser to efficiently handle large files without excessive memory usage.
+### Overview
 
-## Prerequisites
-- Django application with a `padron` app installed
-- `ijson` library installed (`pip install ijson`)
-- Large JSON file with Padron data (e.g., `cr_padron_20240809.json`)
+### Prerequisites
+- Have access to Nessus Server
+- 
+### Usage
+1. Log in to Nessus server and in terminal type this command to extract the `plugins.xml`. Ref [How to export a list of all plugins available in a Nessus scanner](https://community.tenable.com/s/article/How-to-export-a-list-of-all-plugins-available-in-a-Nessus-scanner?language=en_US)
+   ```
+   sudo /opt/nessus/sbin/nessuscli dump --plugins
+   ```
+2. Extract the plugin ids from it and save them into `plugin_ids.txt`
+   ```
+   grep script_id  plugins.xml | sed -E 's/(<script_id>|<\/script_id>)//g' >> plugin_ids.txt
+   ```
+3. Extract the plugin details to save them into `list_plugins.json` file
+   ```
+   (echo "["; first=true; for i in $(cat plugin_ids.txt); do if [ "$first" = true ]; then first=false; else echo ","; fi; curl -H "X-ApiKeys: accessKey=<ACCESS_KEY_STRING>; secretKey=<SECRET_KEY_STRING>" -s -k https://<NESSUS_IP>:8834/plugins/plugin/$i | jq .; done; echo "]") > list_plugins.json
+   ```
+4. Run the `nessus_plugin_converter.py` script to create the signature JSON file `output.json`, make sure the `list_plugins.json` and the `nessus_plugin_converter.py` are in the same folder
+   ```
+   python nessus_plugin_converter.py
+   ```
 
-## Model
-The `Padron` model in `padron/models.py`:
+## 2. Nessus Signature Upload Process
 
-```python
-from django.db import models
+### Overview
+This process imports a large JSON file containing the latest signatures from Nessus into the Django application's database. This only has to be ran when there are updates to the Nessus Signature Datbase
 
-class Padron(models.Model):
-    id_number = models.CharField(max_length=20, unique=True)
-    first_name = models.CharField(max_length=100)
-    lastname1 = models.CharField(max_length=100)
-    lastname2 = models.CharField(max_length=100, blank=True)
-    deceased = models.BooleanField(default=False)
+### Prerequisites
+- Django application with a `signatures` app installed
+- Large JSON file with Output data (e.g., `output.json`)
 
-    class Meta:
-        indexes = [
-            models.Index(fields=['id_number']),
-        ]
-```
+### Import Command
+Located in `signatures/management/commands/upload_signatures.py`.
 
-## Import Command
-Located in `padron/management/commands/import_padron.py`, this command uses `ijson` to stream-parse the JSON file and bulk insert records into the database.
-
-## Usage
+### Usage
 1. Upload the cr_padron file to the Docker Host
    ```
-   scp -i ~/.ssh/vgclinic.key cr_padron_XXXXXXXXX.json root@165.22.185.21:/root/medexp_app/
+   scp -i ~/.ssh/scgportal.key output.json root@165.22.185.21:/root/scgportal/
    ```
-2. Copy the cr_padron_XXXXXXXXX.json to the docker container
+2. Copy the output.json to the docker container
    ```
-   docker cp cr_padron_XXXXXXXXX.json medexp_app-backend-1:/app/cr_padron_XXXXXXXXX.json
+   docker cp output.json scgportal-backend-1:/app/output.json
    ```
 3. Ensure the JSON file is in the Django project's root directory.
    ```
-   docker exec -it medexp_app-backend-1 ls -l /app/cr_padron_XXXXXXXXX.json
+   docker exec -it scgportal-backend-1 ls -l /app/output.json
    ```
 4. Run the command:
    ```
-   docker exec -it medexp_app-backend-1 python manage.py import_padron cr_padron_XXXXXXXXX.json --settings=config.settings.production
+   docker exec -it scgportal-backend-1 python manage.py upload_signatures  --settings=core.settings.development output.json Nessus --settings=config.settings.production
    ```
 
-## Process
-1. The script opens the JSON file and starts parsing it in chunks.
-2. It processes each entry, creating `Padron` objects.
-3. Every 5000 entries, it performs a bulk insert into the database.
-4. The script provides progress updates every 10000 processed entries.
-5. After processing all entries, it reports the total number of records and import duration.
+## 3. Nessus Scan Parser Process (convert from .nessus to .json)
 
-## Notes
-- The `deceased` flag is set to `False` for all imported records by default.
-- The import uses `ignore_conflicts=True`, skipping entries that conflict with existing records.
-- The process is designed to be memory-efficient and can handle large files (400MB+).
+### Overview
+This process converts the scan report from `.nessus` to JSON format, to make it readable by the application, this happens every time we run a scan for a customer.
 
-## PadronSearchView
-This view in `patients/views.py` allows searching the imported Padron data:
+### Prerequisites
+- `.nessus` file with report data (e.g., `10_30_1_0_24_4lu5pv.nessus`)
+- `nessus_scan_parser.py` script in the same directory as the `.nessus` file
 
-```python
-class PadronSearchView(View):
-    def get(self, request, id_number):
-        try:
-            padron_entry = Padron.objects.get(id_number=id_number)
-            return JsonResponse({
-                'found': True,
-                'first_name': padron_entry.first_name,
-                'lastname1': padron_entry.lastname1,
-                'lastname2': padron_entry.lastname2,
-            })
-        except Padron.DoesNotExist:
-            return JsonResponse({
-                'found': False,
-                'message': 'No se encontró un registro coincidente. Por favor ingrese los datos manualmente.'
-            })
-```
-
-## Maintenance
-- Regularly backup the database before running large imports.
-- Monitor server resources during import for any performance issues.
-- Consider scheduling regular imports if Padron data is updated frequently.
+### Usage
+1. Run the script
+   ```
+   python nessus_scan_parser.py 10_30_1_0_24_4lu5pv.nessus
+   ```
+2. Grab the resulting file and upload it to the customer in the application's GUI
