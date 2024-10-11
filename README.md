@@ -93,23 +93,23 @@ location /static/ {
 ## SSL Certificate Management
 
 ### Certificate Renewal Script
-Create `/root/medexp_app/renew_cert.sh`:
+Create `/root/scgportal/renew_cert.sh`:
 ```bash
 #!/bin/bash
-cd /root/medexp_app
+cd /root/scgportal
 docker compose run --rm certbot renew --webroot --webroot-path=/var/www/certbot
 docker compose exec nginx nginx -s reload
 ```
 
 Make it executable:
 ```bash
-chmod +x /root/medexp_app/renew_cert.sh
+chmod +x /root/scgportal/renew_cert.sh
 ```
 
 ### Cron Job for Certificate Renewal
 Add to crontab (`crontab -e`):
 ```
-0 0 1,15 * * /root/medexp_app/renew_cert.sh >> /var/log/certbot_renewal.log 2>&1
+0 0 1,15 * * /root/scgportal/renew_cert.sh >> /var/log/certbot_renewal.log 2>&1
 ```
 
 ## Deployment and Maintenance
