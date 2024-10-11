@@ -56,8 +56,9 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'your_smtp_host'
-EMAIL_PORT = 587  # or the appropriate port for your SMTP server
+EMAIL_HOST = 'smtp.office365.com'
+EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'your_email_user'
-EMAIL_HOST_PASSWORD = 'your_email_password'
+EMAIL_HOST_USER = 'noreply@securitygroupcr.com'
+EMAIL_HOST_PASSWORD = 'vc4.TZ*KCMmQjH_'
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
