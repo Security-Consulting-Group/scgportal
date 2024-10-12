@@ -8,7 +8,7 @@ services:
       - .:/app
       - ./staticfiles:/app/staticfiles
       - /var/certbot/conf:/etc/letsencrypt/:ro
-    env_file: .env_prod
+    env_file: .env/env_prod
 
   nginx:
     image: nginx:alpine
