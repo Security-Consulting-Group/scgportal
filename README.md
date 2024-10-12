@@ -9,6 +9,7 @@
     - [Docker Compose Configuration](#docker-compose-configuration)
     - [Nginx Configuration](#nginx-configuration)
   - [SSL Certificate Management](#ssl-certificate-management)
+    - [First install of the certificates](#first-install-of-the-certificates)
     - [Certificate Renewal Script](#certificate-renewal-script)
     - [Cron Job for Certificate Renewal](#cron-job-for-certificate-renewal)
   - [Deployment and Maintenance](#deployment-and-maintenance)
@@ -91,6 +92,22 @@ location /static/ {
 ```
 
 ## SSL Certificate Management
+### First install of the certificates
+
+1. First disable the https portion of the nginx config
+2. Run this script in the Docker hosting server
+   ```
+   docker compose run --rm certbot certonly --manual --preferred-challenges=dns   --email itops@securitygroupcr.com --agree-tos --no-eff-email   -d *.securitygroupcr.com
+   ```
+3. You will receive a DNS TXT entry, similar to the one below, configure it on the DNS provider
+   ```
+   Before continuing, verify the TXT record has been deployed. Depending on the DNS provider, this may take some time, from a few seconds to multiple minutes. You can check if it has finished deploying with aid of online tools, such as the Google
+   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+   Press Enter to Continue
+   ```
+4. Back to the Docker host, Wait for about 5 to 10 minutes and then hit enter
+5. You can enable the https section of your nginx
+Ref: [Deploying a Django Application with Docker, Nginx, and Certbot](https://medium.com/@akshatgadodia/deploying-a-django-application-with-docker-nginx-and-certbot-eaf576463f19)
 
 ### Certificate Renewal Script
 Create `/root/scgportal/renew_cert.sh`:
