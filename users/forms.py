@@ -3,7 +3,6 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from customers.models import Customer
 from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
-from django.contrib.auth.base_user import BaseUserManager
 
 
 class CustomLoginForm(AuthenticationForm):
@@ -54,7 +53,7 @@ class CustomUserCreationForm(forms.ModelForm):
 
     def save(self, commit=True):
         user = super().save(commit=False)
-        user.set_password(BaseUserManager().make_random_password())
+        user.set_password(User.objects.make_random_password())
         if 'type' in self.cleaned_data:
             user.type = self.cleaned_data['type']
         if commit:
