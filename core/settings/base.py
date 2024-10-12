@@ -27,7 +27,7 @@ INSTALLED_APPS = [
     "crispy_bootstrap5",
     'django_filters',
     'auditlog',
-    'jazzmin',
+    # 'jazzmin',
     # My Apps
     'customers',
     'contracts',
