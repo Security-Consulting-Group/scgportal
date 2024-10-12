@@ -9,11 +9,12 @@
     {% csrf_token %}
     <div class="row">
         <div class="col-md-4">
-        {{ form.service_name|as_crispy_field }}
+        {{ form.service_id|as_crispy_field }}
         {{ form.service_description|as_crispy_field }}
         {{ form.is_active|as_crispy_field }}
         </div>
         <div class="col-md-4">
+        {{ form.service_name|as_crispy_field }}
         {{ form.service_price|as_crispy_field }}
         </div>
     </div>
