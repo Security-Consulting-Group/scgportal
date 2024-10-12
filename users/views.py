@@ -1,4 +1,4 @@
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib import messages
 from django.urls import reverse_lazy, reverse
 from django.views import View
@@ -6,10 +6,12 @@ from django.views.generic import CreateView, UpdateView, ListView
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from core.mixins import SelectedCustomerRequiredMixin
 from .forms import CustomUserCreationForm, CustomUserChangeForm, CustomLoginForm, ProfileUpdateForm
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, update_session_auth_hash
 from django.contrib.auth.views import LoginView, PasswordResetView, PasswordResetConfirmView
 from django.core.exceptions import ValidationError
 from django.contrib.auth import login as auth_login
+from django.http import HttpResponseRedirect
+
 
 User = get_user_model()
 
@@ -129,15 +131,19 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     model = User
     form_class = ProfileUpdateForm
     template_name = 'users/profile_update.html'
-    success_url = reverse_lazy('dashboard:dashboard')
 
     def get_object(self, queryset=None):
         return self.request.user
 
     def form_valid(self, form):
-        response = super().form_valid(form)
-        messages.success(self.request, 'Your profile has been updated successfully.')
-        return response
+        form.save()
+        # messages.success(self.request, 'Your profile has been updated successfully.')
+        return HttpResponseRedirect(self.request.path_info)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # context['messages'] = messages.get_messages(self.request)
+        return context
 
 class UserActivateView(SelectedCustomerRequiredMixin, PermissionRequiredMixin, View):
     permission_required = 'users.change_customuser'

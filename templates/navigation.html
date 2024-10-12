@@ -8,13 +8,13 @@
         </a>
 
         <div class="customer-name-container flex-grow-1 text-center">
-            {% if user.type == 'multi_account' or user.is_staff %}
+            {% comment %} {% if user.type == 'multi_account' or user.is_staff %} {% endcomment %}
                 {% if selected_customer %}
                     <span class="navbar-text">
                         <strong>{{ selected_customer.customer_name }}</strong>
                     </span>
                 {% endif %}
-            {% endif %}
+            {% comment %} {% endif %} {% endcomment %}
         </div>
 
         <button data-bs-toggle="collapse" class="navbar-toggler border rounded border-2 border-white" data-bs-target="#navcol-1">
@@ -30,9 +30,15 @@
                     {% endif %}
                     {% if selected_customer %}
                         <li class="nav-item"><a class="nav-link" href="{% url 'dashboard:dashboard' customer_id=selected_customer.customer_id %}">Dashboard</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'contracts:contract-list' customer_id=selected_customer.customer_id %}">Contracts</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'sec_reports:report-list' customer_id=selected_customer.customer_id %}">Reports</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'users:user-list' customer_id=selected_customer.customer_id %}">Users</a></li>
+                        {% if perms.contracts.view_contract %}
+                            <li class="nav-item"><a class="nav-link" href="{% url 'contracts:contract-list' customer_id=selected_customer.customer_id %}">Contracts</a></li>
+                        {% endif %}
+                        {% if perms.sec_reports.view_securityreport %}
+                            <li class="nav-item"><a class="nav-link" href="{% url 'sec_reports:report-list' customer_id=selected_customer.customer_id %}">Reports</a></li>
+                        {% endif %}
+                        {% if perms.users.add_customuser or perms.users.add_customer_user %}
+                            <li class="nav-item"><a class="nav-link" href="{% url 'users:user-list' customer_id=selected_customer.customer_id %}">Users</a></li>
+                        {% endif %}
                     {% elif user.is_staff %}
                         <li class="nav-item"><a class="nav-link" href="{% url 'services:service-list' %}">Services</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'signatures:signature_list' %}">Signatures</a></li>
