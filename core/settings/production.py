@@ -19,7 +19,7 @@ CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_DOMAIN = '.securitygroupcr.com'
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 ALLOWED_HOSTS = ['portal.securitygroupcr.com']
-CSRF_TRUSTED_ORIGINS = ['https://securitygroupcr.com', 'https://portal.securitygroupcr.com']
+CSRF_TRUSTED_ORIGINS = ['https://*.securitygroupcr.com']
 
 # SECURE_HSTS_SECONDS = 31536000  # 1 year
 # SECURE_HSTS_INCLUDE_SUBDOMAINS = True

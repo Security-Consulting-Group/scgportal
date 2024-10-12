@@ -7,8 +7,8 @@
         <h2>Set Your New Password</h2>
         <hr>
     </div>
-    {% csrf_token %}
     <form method="post">
+        {% csrf_token %}
         <div class="row">
             <div class="col-md-8">
                 {{ form|crispy }}
