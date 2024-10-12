@@ -6,7 +6,6 @@ from django.urls import reverse_lazy
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # Default url behaviors
-# LOGIN_REDIRECT_URL = reverse_lazy('customer_portal:dashboard')
 LOGIN_REDIRECT_URL = 'dashboard:dashboard'
 LOGIN_URL = '/login/'
 LOGOUT_REDIRECT_URL = reverse_lazy('login')

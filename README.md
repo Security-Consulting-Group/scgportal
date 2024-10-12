@@ -174,7 +174,7 @@ docker compose logs nginx
 
 ### Prerequisites
 - Have access to Nessus Server
-- 
+
 ### Usage
 1. Log in to Nessus server and in terminal type this command to extract the `plugins.xml`. Ref [How to export a list of all plugins available in a Nessus scanner](https://community.tenable.com/s/article/How-to-export-a-list-of-all-plugins-available-in-a-Nessus-scanner?language=en_US)
    ```
@@ -220,7 +220,7 @@ Located in `signatures/management/commands/upload_signatures.py`.
    ```
 4. Run the command:
    ```
-   docker exec -it scgportal-backend-1 python manage.py upload_signatures  --settings=core.settings.development output.json Nessus --settings=config.settings.production
+   docker exec -it scgportal-backend-1 python manage.py upload_signatures  --settings=core.settings.development output.json Nessus --settings=core.settings.production
    ```
 
 ## 3. Nessus Scan Parser Process (convert from .nessus to .json)

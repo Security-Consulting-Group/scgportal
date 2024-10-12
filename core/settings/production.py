@@ -18,8 +18,8 @@ SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_DOMAIN = '.scgportal.com'
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-ALLOWED_HOSTS = ['scgportal.com', 'portal.scgportal.com', '*.scgportal']
-CSRF_TRUSTED_ORIGINS = ['https://scgportal.com', 'https://portal.scgportal.com']
+ALLOWED_HOSTS = ['portal.securitygroupcr.com']
+CSRF_TRUSTED_ORIGINS = ['https://securitygroupcr.com', 'https://portal.securitygroupcr.com']
 
 # SECURE_HSTS_SECONDS = 31536000  # 1 year
 # SECURE_HSTS_INCLUDE_SUBDOMAINS = True
@@ -56,9 +56,9 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.office365.com'
+EMAIL_HOST = os.getenv('EMAIL_HOST', default=''),
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'noreply@securitygroupcr.com'
-EMAIL_HOST_PASSWORD = 'vc4.TZ*KCMmQjH_'
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', default=''),
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', default=''),
+DEFAULT_FROM_EMAIL = os.getenv('EMAIL_HOST_USER', default=''),
