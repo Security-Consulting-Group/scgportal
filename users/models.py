@@ -61,19 +61,18 @@ class CustomUser(AbstractUser):
 
     def clean(self):
         super().clean()
-        if self.type == self.UserType.NORMAL and self.customers.count() > 1:
-            raise ValidationError(_("Normal users can only be assigned to one customer. Please change the user type to 'Multi Account' if multiple customers are needed."))
+        if self.pk:  # Only check for existing users
+            if self.type == self.UserType.NORMAL and self.customers.count() > 1:
+                raise ValidationError(_("Normal users can only be assigned to one customer. Please change the user type to 'Multi Account' if multiple customers are needed."))
 
     def save(self, *args, **kwargs):
-        self.full_clean()
-        super().save(*args, **kwargs)
-
-    @property
-    def customer(self):
-        """
-        For backwards compatibility, return the first customer or None.
-        """
-        return self.customers.first()
+        if not self.pk:  # For new users
+            super().save(*args, **kwargs)  # Save first to get a primary key
+            if self.type == self.UserType.NORMAL and self.customers.count() > 1:
+                raise ValidationError(_("Normal users can only be assigned to one customer."))
+        else:
+            self.full_clean()  # For existing users, run full validation
+            super().save(*args, **kwargs)
 
     @customer.setter
     def customer(self, value):

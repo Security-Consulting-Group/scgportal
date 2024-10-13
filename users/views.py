@@ -80,7 +80,10 @@ class UserCreateView(SelectedCustomerRequiredMixin, PermissionRequiredMixin, Cre
         try:
             user = form.save(commit=False)
             user.save()
-            form.save_m2m()
+            customers = form.cleaned_data.get('customers')
+            if customers:
+                user.customers.set(customers)
+            form.save_m2m()  # Save many-to-many relationships
             messages.success(self.request, f"User {user.email} has been created.")
             return redirect(self.get_success_url())
         except ValidationError as e:

@@ -58,7 +58,9 @@ class CustomUserCreationForm(forms.ModelForm):
             user.type = self.cleaned_data['type']
         if commit:
             user.save()
-            self.save_m2m()
+            customers = self.cleaned_data.get('customers')
+            if customers:
+                user.customers.set(customers)
         return user
 
 class CustomUserChangeForm(forms.ModelForm):
