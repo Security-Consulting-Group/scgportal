@@ -74,6 +74,13 @@ class CustomUser(AbstractUser):
             self.full_clean()  # For existing users, run full validation
             super().save(*args, **kwargs)
 
+    @property
+    def customer(self):
+        """
+        For backwards compatibility, return the first customer or None.
+        """
+        return self.customers.first()
+
     @customer.setter
     def customer(self, value):
         """
