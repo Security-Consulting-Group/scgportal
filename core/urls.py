@@ -14,7 +14,7 @@ urlpatterns = [
     path('reset/<uidb64>/<token>/', CustomPasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     
     # App-specific URLs
-    path('customers/', include('customers.urls'), name='customers'),
+    path('accounts/', include('customers.urls'), name='customers'),
     path('services/', include('services.urls'), name='services'),
     path('signatures/', include('signatures.urls'), name='signatures'),
     
