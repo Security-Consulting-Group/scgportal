@@ -1,0 +1,35 @@
+{% autoescape off %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to {{ site_name }}</title>
+</head>
+<body>
+    <h1>Welcome to {{ site_name }}!</h1>
+    
+    <p>Hello {{ user.get_full_name }},</p>
+
+    <p>Your account has been successfully created on {{ site_name }}.</p>
+
+    <p>To set your password and activate your account, please click on the following link:</p>
+
+    <p><a href="{{ reset_url }}">Set Your Password and Activate Your Account</a></p>
+
+    <p>If the link doesn't work, you can copy and paste this URL into your browser:</p>
+
+    <p>{{ reset_url }}</p>
+
+    <p>This link will expire in 24 hours for security reasons. If you need a new link, please contact our support team.</p>
+
+    <p>After setting your password, your account will be activated, and you can log in using your email address: {{ user.email }}</p>
+
+    <p>If you have any questions or need assistance, please don't hesitate to contact our support team.</p>
+
+    <p>Thank you for joining us!</p>
+
+    <p>Best regards,<br>The {{ site_name }} team</p>
+</body>
+</html>
+{% endautoescape %}

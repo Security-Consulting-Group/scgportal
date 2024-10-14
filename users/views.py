@@ -1,19 +1,40 @@
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
 from django.urls import reverse_lazy, reverse
 from django.views import View
 from django.views.generic import CreateView, UpdateView, ListView
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from core.mixins import SelectedCustomerRequiredMixin
-from .forms import CustomUserCreationForm, CustomUserChangeForm, CustomLoginForm, ProfileUpdateForm
-from django.contrib.auth import get_user_model, update_session_auth_hash
-from django.contrib.auth.views import LoginView, PasswordResetView, PasswordResetConfirmView
+from .forms import CustomUserCreationForm, CustomUserChangeForm, ProfileUpdateForm
+from django.contrib.auth import get_user_model
+from django.contrib.auth.views import LoginView, PasswordResetConfirmView
 from django.core.exceptions import ValidationError
 from django.contrib.auth import login as auth_login
 from django.http import HttpResponseRedirect
-
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from notifications.services import send_password_reset_email, send_new_user_notification
 
 User = get_user_model()
+
+class ProfileUpdateView(LoginRequiredMixin, UpdateView):
+    model = User
+    form_class = ProfileUpdateForm
+    template_name = 'users/profile_update.html'
+
+    def get_object(self, queryset=None):
+        return self.request.user
+
+    def form_valid(self, form):
+        form.save()
+        # messages.success(self.request, 'Your profile has been updated successfully.')
+        return HttpResponseRedirect(self.request.path_info)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # context['messages'] = messages.get_messages(self.request)
+        return context
 
 class CustomLoginView(LoginView):
     template_name = 'users/login.html'
@@ -79,12 +100,17 @@ class UserCreateView(SelectedCustomerRequiredMixin, PermissionRequiredMixin, Cre
     def form_valid(self, form):
         try:
             user = form.save(commit=False)
+            user.is_active = False  # Set user as inactive until they set their password
             user.save()
             customers = form.cleaned_data.get('customers')
             if customers:
                 user.customers.set(customers)
             form.save_m2m()  # Save many-to-many relationships
-            messages.success(self.request, f"User {user.email} has been created.")
+            
+            # Send new user notification with password reset link
+            send_new_user_notification(self.request, user)
+            
+            messages.success(self.request, f"User {user.email} has been created and notified with instructions to set their password.")
             return redirect(self.get_success_url())
         except ValidationError as e:
             messages.error(self.request, str(e))
@@ -130,24 +156,6 @@ class UserUpdateView(SelectedCustomerRequiredMixin, PermissionRequiredMixin, Upd
     def has_permission(self):
         return super().has_permission() and self.get_object().customers.filter(customer_id=self.selected_customer.customer_id).exists()
 
-class ProfileUpdateView(LoginRequiredMixin, UpdateView):
-    model = User
-    form_class = ProfileUpdateForm
-    template_name = 'users/profile_update.html'
-
-    def get_object(self, queryset=None):
-        return self.request.user
-
-    def form_valid(self, form):
-        form.save()
-        # messages.success(self.request, 'Your profile has been updated successfully.')
-        return HttpResponseRedirect(self.request.path_info)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        # context['messages'] = messages.get_messages(self.request)
-        return context
-
 class UserActivateView(SelectedCustomerRequiredMixin, PermissionRequiredMixin, View):
     permission_required = 'users.change_customuser'
 
@@ -168,13 +176,6 @@ class UserDeactivateView(SelectedCustomerRequiredMixin, PermissionRequiredMixin,
         messages.success(request, f"User {user.email} has been deactivated.")
         return redirect('users:user-list', customer_id=self.selected_customer.customer_id)
 
-from django.contrib.auth.tokens import default_token_generator
-from django.utils.http import urlsafe_base64_encode
-from django.utils.encoding import force_bytes
-from django.core.mail import send_mail
-from django.conf import settings
-from django.template.loader import render_to_string
-
 class UserResetPasswordView(SelectedCustomerRequiredMixin, PermissionRequiredMixin, View):
     permission_required = 'users.change_customuser'
 
@@ -190,34 +191,31 @@ class UserResetPasswordView(SelectedCustomerRequiredMixin, PermissionRequiredMix
             reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})
         )
         
-        # Prepare email content
-        subject = 'SCG Portal - Password Reset Request'
-        context = {
-            'user': user,
-            'reset_url': reset_url,
-            'site_name': 'SCG Portal'
-        }
-        message = render_to_string('users/password_reset/email.html', context)
-        from_email = settings.DEFAULT_FROM_EMAIL
-        recipient_list = [user.email]
-        
-        # Send email based on environment
-        if settings.DEBUG:
-            # In development, print to console
-            print(f"Subject: {subject}")
-            print(f"From: {from_email}")
-            print(f"To: {recipient_list[0]}")
-            print(f"Message:\n{message}")
-        else:
-            # In production, actually send the email
-            send_mail(subject, message, from_email, recipient_list, html_message=message)
+        # Send password reset email
+        send_password_reset_email(request, user, reset_url)
         
         messages.success(request, f'A password reset email has been sent to {user.email}.')
         return redirect('users:user-list', customer_id=self.selected_customer.customer_id)
     
 class CustomPasswordResetConfirmView(PasswordResetConfirmView):
     template_name = 'users/password_reset/confirm.html'
-    
-    def get_success_url(self):
-        messages.success(self.request, 'Your password has been successfully reset.')
-        return reverse('login')
+    success_url = reverse_lazy('login')
+
+    def form_valid(self, form):
+        user = form.save()
+        
+        # Activate the user if they're not already active
+        if not user.is_active:
+            user.is_active = True
+            user.save()
+            messages.success(self.request, 'Your account has been activated and your password has been set. You can now log in.')
+        else:
+            messages.success(self.request, 'Your password has been successfully reset.')
+
+        return super().form_valid(form)
+
+    def get(self, *args, **kwargs):
+        # Check if the user is already active
+        if self.user.is_active:
+            messages.info(self.request, 'Your account is already active. You can reset your password here.')
+        return super().get(*args, **kwargs)

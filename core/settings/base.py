@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'payments',
     'sec_reports',
     'users',
+    'notifications',
 ]
 
 BASE_MIDDLEWARE = [
