@@ -24,7 +24,7 @@ def send_email_notification(request, subject, template_name, context, recipient_
         send_mail(subject, message, from_email, recipient_list, html_message=html_message)
 
 def send_password_reset_email(request, user, reset_url):
-    subject = f"{get_current_site(request).name} - Password Reset Request"
+    subject = f"[SCG] - Password Reset Request"
     template_name = 'notifications/password_reset_email.html'
     context = {
         'user': user,
@@ -33,7 +33,7 @@ def send_password_reset_email(request, user, reset_url):
     send_email_notification(request, subject, template_name, context, [user.email])
 
 def send_new_user_notification(request, new_user):
-    subject = f"Welcome to {get_current_site(request).name}"
+    subject = f"[SCG] - Welcome to SCG Portal"
     template_name = 'notifications/new_user_email.html'
     
     # Generate password reset token
