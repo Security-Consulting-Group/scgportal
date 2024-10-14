@@ -56,7 +56,7 @@ class CustomerCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
         for superuser in superusers:
             superuser.customers.add(self.object)
         
-        messages.success(self.request, f"Customer {self.object.customer_name} has been created")
+        messages.success(self.request, f"Account {self.object.customer_name} has been created")
         return response
 
 class CustomerUpdateView(SelectedCustomerRequiredMixin, PermissionRequiredMixin, UpdateView):
@@ -75,7 +75,7 @@ class CustomerUpdateView(SelectedCustomerRequiredMixin, PermissionRequiredMixin,
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        messages.success(self.request, f"Customer {self.object.customer_name} has been updated.")
+        messages.success(self.request, f"Account {self.object.customer_name} has been updated.")
         return response
 
 class CustomerDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
@@ -91,5 +91,5 @@ class CustomerDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
 
     def delete(self, request, *args, **kwargs):
         customer = self.get_object()
-        messages.success(self.request, f"Customer {customer.customer_name} has been deleted.")
+        messages.success(self.request, f"Account {customer.customer_name} has been deleted.")
         return super().delete(request, *args, **kwargs)
