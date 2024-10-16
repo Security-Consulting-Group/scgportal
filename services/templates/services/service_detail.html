@@ -1,23 +1,28 @@
 {% extends 'base.html' %}
 {% load static %}
-
 {% block content %}
-<h1>Service Details</h1>
-<dl>
-    <dt>Service ID:</dt>
-    <dd>{{ service.service_id }}</dd>
-    
-    <dt>Name:</dt>
-    <dd>{{ service.service_name }}</dd>
-    
-    <dt>Description:</dt>
-    <dd>{{ service.service_description }}</dd>
-    
-    <dt>Price:</dt>
-    <dd>{{ service.service_price }}</dd>
-</dl>
 
-<a href="{% url 'services:service-update' service.pk %}" class="btn btn-secondary mt-3">Edit Service</a>
-<a href="{% url 'services:service-delete' service.pk %}" class="btn btn-danger mt-3">Delete Service</a>
-<a href="{% url 'services:service-list' %}" class="btn btn-secondary mt-3">Back to Service List</a>
+<h2>Service Details</h2>
+<hr>
+<div class="row">
+    <div class="col-md-4">
+        <dt>Service ID:</dt>
+        <dd>{{ service.service_id }}</dd>
+        <dt>Description:</dt>
+        <dd>{{ service.service_description }}</dd>
+        <dt> Active:</dt>
+        <dd>{{ service.is_active }}</dd>
+    </div>
+    <div class="col-md-4">
+        <dt>Name:</dt>
+        <dd>{{ service.service_name }}</dd>
+        <dt>Price:</dt>
+        <dd>{{ service.service_price }}</dd>
+    </div>
+</div>
+<hr>
+<div class="right-aligned mt-3">
+    <a href="{% url 'services:service-list' %}" class="btn btn-secondary mt-3">Back to Service List</a>
+</div>
+
 {% endblock %}

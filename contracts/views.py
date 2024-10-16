@@ -1,18 +1,19 @@
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from core.mixins import SelectedCustomerRequiredMixin
-from django.core.exceptions import PermissionDenied
 from django.urls import reverse_lazy
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.forms import inlineformset_factory
+from django.utils import timezone
+from django.utils.safestring import mark_safe
+from django.http import HttpResponseRedirect
 from contracts.models import Contract, ContractService
 from contracts.forms import ContractForm, ServiceQuantityForm
-from customers.models import Customer
 from payments.forms import PaymentForm
-from django.contrib import messages
 from decimal import Decimal
-from django.utils import timezone
+
 
 ServiceFormSet = inlineformset_factory(
     Contract, 
@@ -109,7 +110,8 @@ class ContractCreateView(SelectedCustomerRequiredMixin, PermissionRequiredMixin,
             else:
                 return self.form_invalid(form)
             self.object.calculate_total()
-        messages.success(self.request, 'Contract created successfully.')
+        messages.success(self.request,
+                         mark_safe(f"Contract '<strong>{self.object.contract_id}</strong>' has been created successfully."))
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -154,7 +156,9 @@ class ContractUpdateView(SelectedCustomerRequiredMixin, PermissionRequiredMixin,
             else:
                 return self.form_invalid(form)
             self.object.calculate_total()
-        messages.success(self.request, 'Contract updated successfully.')
+        messages.info(self.request,
+                      mark_safe(f"Contract '<strong>{self.object.contract_id}</strong>' has been updated successfully."),
+                      extra_tags='alert-primary')
         return super().form_valid(form)
 
     def form_invalid(self, form):
@@ -179,3 +183,16 @@ class ContractDeleteView(SelectedCustomerRequiredMixin, PermissionRequiredMixin,
 
     def get_success_url(self):
         return reverse_lazy('contracts:contract-list', kwargs={'customer_id': self.object.customer.customer_id})
+
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        success_url = self.get_success_url()
+        contract_id = self.object.contract_id
+        self.object.delete()
+        messages.warning(self.request,
+                         mark_safe(f"Contract '<strong>{contract_id}</strong>' has been deleted successfully."),
+                         extra_tags='alert-warning')
+        return HttpResponseRedirect(success_url)
+
+    def post(self, request, *args, **kwargs):
+        return self.delete(request, *args, **kwargs)

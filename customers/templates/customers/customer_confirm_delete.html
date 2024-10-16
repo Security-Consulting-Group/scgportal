@@ -1,10 +1,12 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Delete Account</h2>
-<p>Are you sure you want to delete the account "{{ object.customer_name }}"?</p>
-<form method="post">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-danger">Confirm Delete</button>
-    <a href="{% url 'customers:customer-detail' pk=object.customer_id %}" class="btn btn-secondary">Cancel</a>
-</form>
+<div class="container">
+    <h2>Delete Account</h2>
+    <p>Are you sure you want to delete the account "{{ object.customer_name }}"?</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Confirm Delete</button>
+        <a href="{% url 'customers:customer-list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
 {% endblock %}

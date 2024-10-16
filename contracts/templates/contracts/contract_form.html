@@ -3,11 +3,7 @@
 {% block content %}
 <h2>{% if form.instance.pk %}Edit{% else %}Create{% endif %} Contract</h2>
 <hr>
-{% if messages %}
-    {% for message in messages %}
-        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-    {% endfor %}
-{% endif %}
+
 <form method="post">
     {% csrf_token %}
     <div class="row">

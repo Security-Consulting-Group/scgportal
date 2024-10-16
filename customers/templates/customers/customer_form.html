@@ -2,13 +2,14 @@
 {% block content %}
 {% load crispy_forms_tags %}
 
-<h2>Create New Account</h2>
+<h2>{% if form.instance.pk %}Update{% else %}Create{% endif %} Account</h2>
 <hr>
 <form method="post">
     {% csrf_token %}
     <div class="row">
         <div class="col-md-4">
         {{ form.customer_name|as_crispy_field }}
+        {{ form.customer_type|as_crispy_field }}
         </div>
     </div>
     <hr>

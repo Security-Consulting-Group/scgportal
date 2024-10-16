@@ -1,20 +1,23 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
+from django.contrib.auth import get_user_model
+from django.contrib.auth import login as auth_login
+from django.contrib.auth.views import LoginView, PasswordResetConfirmView
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from core.mixins import SelectedCustomerRequiredMixin
+from django.utils.safestring import mark_safe
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
 from django.urls import reverse_lazy, reverse
 from django.views import View
 from django.views.generic import CreateView, UpdateView, ListView
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from core.mixins import SelectedCustomerRequiredMixin
-from .forms import CustomUserCreationForm, CustomUserChangeForm, ProfileUpdateForm
-from django.contrib.auth import get_user_model
-from django.contrib.auth.views import LoginView, PasswordResetConfirmView
+from django.views.generic.edit import DeleteView
 from django.core.exceptions import ValidationError
-from django.contrib.auth import login as auth_login
 from django.http import HttpResponseRedirect
-from django.contrib.auth.tokens import default_token_generator
-from django.utils.http import urlsafe_base64_encode
-from django.utils.encoding import force_bytes
+from users.forms import CustomUserCreationForm, CustomUserChangeForm, ProfileUpdateForm
 from notifications.services import send_password_reset_email, send_new_user_notification
+
 
 User = get_user_model()
 
@@ -28,19 +31,23 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         form.save()
-        # messages.success(self.request, 'Your profile has been updated successfully.')
+        messages.info(self.request,
+                      'Your profile has been updated successfully.',
+                      extra_tags='alert-primary')
         return HttpResponseRedirect(self.request.path_info)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # context['messages'] = messages.get_messages(self.request)
+        context['messages'] = messages.get_messages(self.request)
         return context
 
 class CustomLoginView(LoginView):
     template_name = 'users/login.html'
 
     def form_invalid(self, form):
-        messages.error(self.request, "Invalid credentials. Please try again.")
+        messages.error(self.request,
+                       "Invalid credentials. Please try again.",
+                       extra_tags='alert-danger')
         return super().form_invalid(form)
 
     def form_valid(self, form):
@@ -62,7 +69,7 @@ class CustomLoginView(LoginView):
             
             return redirect(self.get_success_url())
         except ValidationError as e:
-            messages.error(self.request, str(e))
+            messages.error(self.request, str(e), extra_tags='alert-danger')
             return self.form_invalid(form)
 
     def get_success_url(self):
@@ -110,14 +117,17 @@ class UserCreateView(SelectedCustomerRequiredMixin, PermissionRequiredMixin, Cre
             # Send new user notification with password reset link
             send_new_user_notification(self.request, user)
             
-            messages.success(self.request, f"User {user.email} has been created and notified with instructions to set their password.")
+            messages.success(self.request,
+                             mark_safe(f"User <strong>{user.email}</strong> has been created and notified with instructions to set their password."))
             return redirect(self.get_success_url())
         except ValidationError as e:
-            messages.error(self.request, str(e))
+            messages.error(self.request,str(e), extra_tags='alert-danger')
             return self.form_invalid(form)
 
     def form_invalid(self, form):
-        messages.error(self.request, "This type of user can only be assigned to one customer. Please reach out to support to fix this issue.", extra_tags='danger')
+        messages.error(self.request,
+                       mark_safe("This type of user can only be assigned to one customer.<br>Please reach out to <strong><a href='mailto:itops@securitygroupcr.com'>itops@securitygroupcr.com</a></strong> to fix this issue."),
+                       extra_tags='alert-danger')
         return super().form_invalid(form)
 
     def get_success_url(self):
@@ -140,14 +150,18 @@ class UserUpdateView(SelectedCustomerRequiredMixin, PermissionRequiredMixin, Upd
     def form_valid(self, form):
         try:
             response = super().form_valid(form)
-            messages.success(self.request, f"User {self.object.email} has been updated.")
+            messages.info(self.request,
+                          mark_safe(f"User <strong>{self.object.email}</strong> has been updated."),
+                          extra_tags='alert-primary')
             return response
         except ValidationError as e:
-            messages.error(self.request, str(e))
+            messages.error(self.request, str(e), extra_tags='alert-danger')
             return self.form_invalid(form)
 
     def form_invalid(self, form):
-        messages.error(self.request, "This type of user can only be assigned to one customer. Please reach out to support to fix this issue.", extra_tags='danger')
+        messages.error(self.request,
+                       mark_safe("This type of user can only be assigned to one customer.<br>Please reach out to <strong><a href='mailto:itops@securitygroupcr.com'>itops@securitygroupcr.com</a></strong> to fix this issue."),
+                       extra_tags='alert-danger')
         return super().form_invalid(form)
 
     def get_success_url(self):
@@ -156,6 +170,30 @@ class UserUpdateView(SelectedCustomerRequiredMixin, PermissionRequiredMixin, Upd
     def has_permission(self):
         return super().has_permission() and self.get_object().customers.filter(customer_id=self.selected_customer.customer_id).exists()
 
+class UserDeleteView(SelectedCustomerRequiredMixin, PermissionRequiredMixin, DeleteView):
+    model = User
+    template_name = 'users/user_confirm_delete.html'
+    permission_required = ('users.delete_customuser', 'users.delete_customer_user')
+
+    def get_success_url(self):
+        return reverse('users:user-list', kwargs={'customer_id': self.selected_customer.customer_id})
+
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        success_url = self.get_success_url()
+        user_email = self.object.email
+        self.object.delete()
+        messages.warning(self.request,
+                         mark_safe(f"User <strong>{user_email}</strong> has been deleted."),
+                         extra_tags='alert-warning')
+        return HttpResponseRedirect(success_url)
+
+    def post(self, request, *args, **kwargs):
+        return self.delete(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return User.objects.filter(customers=self.selected_customer)
+
 class UserActivateView(SelectedCustomerRequiredMixin, PermissionRequiredMixin, View):
     permission_required = 'users.change_customuser'
 
@@ -163,7 +201,8 @@ class UserActivateView(SelectedCustomerRequiredMixin, PermissionRequiredMixin, V
         user = get_object_or_404(User, pk=pk, customers=self.selected_customer)
         user.is_active = True
         user.save()
-        messages.success(request, f"User {user.email} has been activated.")
+        messages.success(self.request,
+                      mark_safe(f"User <strong>{user.email}</strong> has been activated."))
         return redirect('users:user-list', customer_id=self.selected_customer.customer_id)
 
 class UserDeactivateView(SelectedCustomerRequiredMixin, PermissionRequiredMixin, View):
@@ -173,7 +212,9 @@ class UserDeactivateView(SelectedCustomerRequiredMixin, PermissionRequiredMixin,
         user = get_object_or_404(User, pk=pk, customers=self.selected_customer)
         user.is_active = False
         user.save()
-        messages.success(request, f"User {user.email} has been deactivated.")
+        messages.warning(self.request,
+                         mark_safe(f"User <strong>{user.email}</strong> has been deactivated."),
+                         extra_tags='alert-warning')
         return redirect('users:user-list', customer_id=self.selected_customer.customer_id)
 
 class UserResetPasswordView(SelectedCustomerRequiredMixin, PermissionRequiredMixin, View):
@@ -194,7 +235,9 @@ class UserResetPasswordView(SelectedCustomerRequiredMixin, PermissionRequiredMix
         # Send password reset email
         send_password_reset_email(request, user, reset_url)
         
-        messages.success(request, f'A password reset email has been sent to {user.email}.')
+        messages.info(self.request,
+                      mark_safe(f"A password reset email has been sent to <strong><a href='mailto:{user.email}'>{user.email}</a></strong>."),
+                      extra_tags='alert-primary')
         return redirect('users:user-list', customer_id=self.selected_customer.customer_id)
     
 class CustomPasswordResetConfirmView(PasswordResetConfirmView):
@@ -208,14 +251,19 @@ class CustomPasswordResetConfirmView(PasswordResetConfirmView):
         if not user.is_active:
             user.is_active = True
             user.save()
-            messages.success(self.request, 'Your account has been activated and your password has been set. You can now log in.')
+            messages.success(self.request,
+                          'Your account has been activated and your password has been set. You can now log in.')
         else:
-            messages.success(self.request, 'Your password has been successfully reset.')
+            messages.info(self.request,
+                          'Your password has been successfully reset.',
+                          extra_tags='alert-primary')
 
         return super().form_valid(form)
 
     def get(self, *args, **kwargs):
         # Check if the user is already active
         if self.user.is_active:
-            messages.info(self.request, 'Your account is already active. You can reset your password here.')
+            messages.info(self.request,
+                          'Your account is already active. You can reset your password here.',
+                          extra_tags='alert-primary')
         return super().get(*args, **kwargs)

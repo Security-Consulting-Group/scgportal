@@ -1,14 +1,16 @@
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.views.generic.edit import FormView
-from django.urls import reverse_lazy
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from .models import Signature
-from .forms import SignatureForm, SignatureUploadForm
-from django.db.models import Q
+from django.urls import reverse_lazy, reverse_lazy
 from django.contrib import messages
-import json
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.http import HttpResponseRedirect
 from django.utils import timezone
+from django.utils.safestring import mark_safe
+from django.db.models import Q
+from signatures.models import Signature
+from signatures.forms import SignatureForm, SignatureUploadForm
 from datetime import datetime
+import json
 
 class SignatureListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     permission_required = 'signatures.view_signature'
@@ -54,6 +56,12 @@ class SignatureCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateVie
     template_name = 'signatures/signature_form.html'
     success_url = reverse_lazy('signatures:signature_list')
 
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request,
+                         mark_safe(f"Signature <strong>{self.object.plugin_name}</strong> has been created successfully."))
+        return response
+
 class SignatureUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     permission_required = 'signatures.change_signature'
     model = Signature
@@ -61,11 +69,31 @@ class SignatureUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateVie
     template_name = 'signatures/signature_form.html'
     success_url = reverse_lazy('signatures:signature_list')
 
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.info(self.request,
+                      mark_safe(f"Signature <strong>{self.object.plugin_name}</strong> has been updated successfully."),
+                      extra_tags='alert-primary')
+        return response
+
 class SignatureDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     permission_required = 'signatures.delete_signature'
     model = Signature
     template_name = 'signatures/signature_confirm_delete.html'
     success_url = reverse_lazy('signatures:signature_list')
+
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        success_url = self.get_success_url()
+        signature_name = self.object.plugin_name
+        self.object.delete()
+        messages.warning(self.request,
+                       mark_safe(f"Signature <strong>{signature_name}</strong> has been deleted successfully."),
+                       extra_tags='alert-warning')
+        return HttpResponseRedirect(success_url)
+
+    def post(self, request, *args, **kwargs):
+        return self.delete(request, *args, **kwargs)
     
 import logging
 

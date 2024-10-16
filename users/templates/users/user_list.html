@@ -4,23 +4,6 @@
 <h2>Users</h2>
 <hr>
 
-{% if messages %}
-<div id="message-container">
-    {% for message in messages %}
-    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-    {% endfor %}
-</div>
-
-<script>
-    setTimeout(function() {
-        var messageContainer = document.getElementById('message-container');
-        if (messageContainer) {
-            messageContainer.style.display = 'none';
-        }
-    }, 5000);
-</script>
-{% endif %}
-
 {% if perms.users.add_customuser or perms.users.add_customer_user %}
 <a href="{% url 'users:user-create' customer_id=request.selected_customer.customer_id %}" class="btn btn-primary mb-3">Create New User</a>
 {% endif %}
@@ -36,7 +19,7 @@
     <tbody>
         {% for user in users %}
         <tr>
-            <td><a href="{% url 'users:user-update' customer_id=request.selected_customer.customer_id pk=user.pk %}">{{ user.email }}</a></td>
+            <td>{{ user.email }}</td>
             <td>{{ user.get_full_name }}</td>
             <td>
                 {% if user.is_active %}
@@ -53,8 +36,12 @@
             </td>
             <td>
                 {% if perms.users.change_customuser or perms.users.change_customer_user %}
-                <a href="{% url 'users:reset-user-password' customer_id=request.selected_customer.customer_id pk=user.pk %}" class="btn btn-warning btn-sm">Reset Password</a>
+                <a href="{% url 'users:reset-user-password' customer_id=request.selected_customer.customer_id pk=user.pk %}" class="btn btn-primary btn-sm">Reset Password</a>
+                <a href="{% url 'users:user-update' customer_id=request.selected_customer.customer_id pk=user.pk %}" class="btn btn-sm btn-warning">Edit</a>
                 {% endif %}
+                {% if perms.users.delete_customuser or perms.users.delete_customer_user %}
+                <a href="{% url 'users:user-delete' customer_id=request.selected_customer.customer_id pk=user.pk %}" class="btn btn-danger btn-sm">Delete</a>
+            {% endif %}
             </td>
         </tr>
         {% empty %}

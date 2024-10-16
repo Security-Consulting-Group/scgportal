@@ -9,6 +9,7 @@ from .models import Payment
 from .forms import PaymentForm
 from contracts.models import Contract
 from customers.models import Customer
+from django.core.exceptions import PermissionDenied
 
 class PaymentCreateView(SelectedCustomerRequiredMixin, LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     model = Payment
@@ -65,8 +66,6 @@ class PaymentListView(SelectedCustomerRequiredMixin, PermissionRequiredMixin, Li
         context = super().get_context_data(**kwargs)
         context['contract'] = get_object_or_404(Contract, id=self.kwargs['contract_id'], customer=self.get_selected_customer())
         return context
-
-from django.core.exceptions import PermissionDenied
 
 class PaymentDetailView(SelectedCustomerRequiredMixin, PermissionRequiredMixin, DetailView):
     model = Payment
