@@ -8,7 +8,7 @@ load_dotenv(Path.joinpath(BASE_DIR, '.env/env_devel'))
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 

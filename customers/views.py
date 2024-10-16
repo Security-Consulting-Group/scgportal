@@ -1,11 +1,13 @@
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from core.mixins import SelectedCustomerRequiredMixin
+from django.utils.safestring import mark_safe
 from django.urls import reverse_lazy, reverse
-from .models import Customer
-from .forms import CustomerForm
-from django.contrib.auth import get_user_model
-from django.contrib import messages
+from django.http import HttpResponseRedirect
+from customers.models import Customer
+from customers.forms import CustomerForm
 
 User = get_user_model()
 
@@ -56,26 +58,24 @@ class CustomerCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
         for superuser in superusers:
             superuser.customers.add(self.object)
         
-        messages.success(self.request, f"Account {self.object.customer_name} has been created")
+        messages.success(self.request,
+                         mark_safe(f"Account <strong>{self.object.customer_name}</strong> has been created"))
         return response
 
-class CustomerUpdateView(SelectedCustomerRequiredMixin, PermissionRequiredMixin, UpdateView):
+class CustomerUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = Customer
     form_class = CustomerForm
     template_name = 'customers/customer_form.html'
     permission_required = 'customers.change_customer'
-
-    def get_object(self, queryset=None):
-        # Use the `pk` from the URL to fetch the customer
-        customer_id = self.kwargs.get('pk')
-        return self.request.user.customers.get(customer_id=customer_id)
 
     def get_success_url(self):
         return reverse('customers:customer-list')
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        messages.success(self.request, f"Account {self.object.customer_name} has been updated.")
+        messages.info(self.request,
+                      mark_safe(f"Account <strong>{self.object.customer_name}</strong> has been updated."),
+                      extra_tags='alert-primary')
         return response
 
 class CustomerDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
@@ -83,13 +83,18 @@ class CustomerDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
     template_name = 'customers/customer_confirm_delete.html'
     permission_required = 'customers.delete_customer'
 
-    def get_queryset(self):
-        return self.request.user.customers.all()
-
     def get_success_url(self):
         return reverse('customers:customer-list')
 
     def delete(self, request, *args, **kwargs):
-        customer = self.get_object()
-        messages.success(self.request, f"Account {customer.customer_name} has been deleted.")
-        return super().delete(request, *args, **kwargs)
+        self.object = self.get_object()
+        success_url = self.get_success_url()
+        customer_name = self.object.customer_name
+        self.object.delete()
+        messages.warning(self.request,
+                         mark_safe(f"Account <strong>{customer_name}</strong> has been deleted."),
+                         extra_tags='alert-warning')
+        return HttpResponseRedirect(success_url)
+
+    def post(self, request, *args, **kwargs):
+        return self.delete(request, *args, **kwargs)

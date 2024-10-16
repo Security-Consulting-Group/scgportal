@@ -139,13 +139,7 @@
 </div>
 <hr>
 <div class="right-aligned">
-    {% if perms.contracts.change_contract %}
-        <a href="{% url 'contracts:contract-update' customer_id=contract.customer.customer_id contract_id=contract.contract_id %}" class="btn btn-secondary mt-3">Edit Contract</a>
-    {% endif %}
-    {% if perms.contracts.delete_contract %}
-        <a href="{% url 'contracts:contract-delete' customer_id=contract.customer.customer_id contract_id=contract.contract_id %}" class="btn btn-danger mt-3">Delete Contract</a>
-    {% endif %}
-        <a href="{% url 'contracts:contract-list' customer_id=contract.customer.customer_id %}" class="btn btn-secondary mt-3">Back to Contracts</a>
+    <a href="{% url 'contracts:contract-list' customer_id=contract.customer.customer_id %}" class="btn btn-secondary mt-3">Back to Contracts</a>
 </div>
 
 {% endblock %}
