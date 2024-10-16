@@ -14,8 +14,10 @@
         <tr>
             <th>Report ID</th>
             <th>Customer</th>
+            <th>Contract</th>
             <th>Report Type</th>
             <th>Scan Date</th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -23,8 +25,14 @@
         <tr>
             <td><a href="{% url 'sec_reports:report_detail' customer_id=report.customer.customer_id report_id=report.report_id %}">{{ report.report_id }}</a></td>
             <td>{{ report.customer.customer_name }}</td>
+            <td>{% if report.contract %}{{ report.contract.contract_id }}{% else %}N/A{% endif %}</td>
             <td>{{ report.report_type.service_name|default:"N/A" }}</td>
             <td>{{ report.scan_date }}</td>
+            <td>
+                {% if perms.sec_reports.delete_securityreport %}
+                <a href="{% url 'sec_reports:report_delete' customer_id=report.customer.customer_id report_id=report.report_id %}" class="btn btn-danger btn-sm">Delete</a>
+                {% endif %}
+            </td>
         </tr>
         {% endfor %}
     </tbody>

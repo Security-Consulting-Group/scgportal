@@ -161,9 +161,6 @@
 </div>
 <hr>
 <div class="right-aligned">
-    {% if perms.sec_reports.delete_securityreport %}
-        <a href="{% url 'sec_reports:report_delete' customer_id=report.customer.customer_id report_id=report.report_id %}" class="btn btn-danger mt-3">Delete Report</a>
-    {% endif %}
     <a href="{% url 'sec_reports:report-list' customer_id=report.customer.customer_id %}" class="btn btn-secondary mt-3">Back to Reports</a>
 </div>
 {% endblock %}

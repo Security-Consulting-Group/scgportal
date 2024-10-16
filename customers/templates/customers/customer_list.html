@@ -5,24 +5,6 @@
 {% block content %}
 <h2>Accounts</h2>
 <hr>
-
-{% if messages %}
-<div id="message-container">
-    {% for message in messages %}
-    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-    {% endfor %}
-</div>
-
-<script>
-    setTimeout(function() {
-        var messageContainer = document.getElementById('message-container');
-        if (messageContainer) {
-            messageContainer.style.display = 'none';
-        }
-    }, 5000);
-</script>
-{% endif %}
-
 {% if perms.customers.add_customer %}
 <a href="{% url 'customers:customer-create' %}" class="btn btn-primary mb-3">Add New Account</a>
 {% endif %}
@@ -36,20 +18,70 @@
         </tr>
     </thead>
     <tbody>
-    {% for customer in customers %}
+        {% for customer in customers %}
         <tr>
             <td>{{ customer.customer_name }}</td>
             <td>{{ customer.created_on }}</td>
             <td>{{ customer.customer_type }}</td>
             <td>
                 <a href="{% url 'dashboard:dashboard' customer_id=customer.customer_id %}" class="btn btn-sm btn-primary">Manage</a>
+                <a href="{% url 'customers:customer-update' pk=customer.customer_id %}" class="btn btn-sm btn-warning">Edit</a>
+                <a href="{% url 'customers:customer-delete' pk=customer.customer_id %}" class="btn btn-sm btn-danger">Delete</a>
             </td>
         </tr>
-    {% empty %}
+        {% empty %}
         <tr>
             <td colspan="4">No Accounts found.</td>
         </tr>
-    {% endfor %}
+        {% endfor %}
     </tbody>
 </table>
 {% endblock %}
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const deleteButtons = document.querySelectorAll('.delete-customer');
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const customerId = this.getAttribute('data-customer-id');
+                const customerName = this.getAttribute('data-customer-name');
+                if (confirm(`Are you sure you want to delete the account "${customerName}"?`)) {
+                    fetch(`/customers/${customerId}/delete/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': getCookie('csrftoken'),
+                            'Content-Type': 'application/json'
+                        },
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            location.reload();
+                        } else {
+                            alert('Error deleting account. Please try again.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred. Please try again.');
+                    });
+                }
+            });
+        });
+    
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    });
+</script>
+{% endblock%}

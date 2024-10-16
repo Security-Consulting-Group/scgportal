@@ -161,7 +161,7 @@ docker compose exec nginx ls -l /app/staticfiles
 
 ### View Backend Logs
 ```bash
-docker compose backend nginx
+docker compose logs backend
 ```
 
 ### View Nginx Logs

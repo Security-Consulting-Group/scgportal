@@ -1,26 +1,25 @@
 from django.views.generic import ListView, DetailView, DeleteView
 from django.views.generic.edit import FormView
+from django.views.decorators.http import require_POST
+from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.utils.safestring import mark_safe
 from django.urls import reverse_lazy
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from core.mixins import SelectedCustomerRequiredMixin
-from .forms import ReportUploadForm
-from .models import SecurityReport, ReportVulnerability, VulnerabilityHistory
+from django.db import transaction, IntegrityError, models
+from django.db.models import Max
+from django.http import JsonResponse, HttpResponseRedirect
+from django.shortcuts import get_object_or_404
+from sec_reports.forms import ReportUploadForm
+from sec_reports.models import SecurityReport, ReportVulnerability, VulnerabilityHistory
 from signatures.models import Signature
 from customers.models import Customer
-from contracts.models import Contract
 from services.models import Service
-import json, uuid
-from django.db import transaction, IntegrityError
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST, require_GET
-from django.utils.decorators import method_decorator
-from django.shortcuts import get_object_or_404
 from collections import defaultdict
-from django.db import models
-from django.db.models import Max
-from django.contrib.auth import get_user_model
-from django.utils import timezone
+import json
 
 class SecurityReportListView(SelectedCustomerRequiredMixin, LoginRequiredMixin, PermissionRequiredMixin, ListView):
     permission_required = 'sec_reports.view_securityreport'
@@ -32,6 +31,11 @@ class SecurityReportListView(SelectedCustomerRequiredMixin, LoginRequiredMixin, 
 
     def get_queryset(self):
         return SecurityReport.objects.filter(customer=self.request.selected_customer).order_by('-scan_date')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['messages'] = messages.get_messages(self.request)
+        return context
 
 class SecurityReportDetailView(SelectedCustomerRequiredMixin, LoginRequiredMixin, PermissionRequiredMixin, DetailView):
     model = SecurityReport
@@ -196,6 +200,19 @@ class SecurityReportDeleteView(SelectedCustomerRequiredMixin, LoginRequiredMixin
             'customer_id': self.object.customer.customer_id
         })
 
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        success_url = self.get_success_url()
+        report_id = self.object.report_id
+        self.object.delete()
+        messages.warning(self.request,
+                         mark_safe(f"Security report <strong>{report_id}</strong> has been deleted successfully."),
+                         extra_tags='alert-warning')
+        return HttpResponseRedirect(success_url)
+
+    def post(self, request, *args, **kwargs):
+        return self.delete(request, *args, **kwargs)
+
 class UploadReportView(SelectedCustomerRequiredMixin, LoginRequiredMixin, PermissionRequiredMixin, FormView):
     form_class = ReportUploadForm
     template_name = 'sec_reports/upload_report.html'
@@ -273,19 +290,27 @@ class UploadReportView(SelectedCustomerRequiredMixin, LoginRequiredMixin, Permis
                         )
 
                     except Signature.DoesNotExist:
-                        messages.warning(self.request, f"Signature with ID {alert['plugin_id']} not found.")
+                        messages.warning(self.request,
+                                         mark_safe(f"Signature with ID <strong>{alert['plugin_id']}</strong> not found."),
+                                         extra_tags='alert-warning')
                     except IntegrityError as e:
-                        messages.warning(self.request, f"Duplicate entry skipped: {str(e)}")
+                        messages.error(self.request,
+                                       mark_safe(f"Duplicate entry skipped: <strong>{str(e)}</strong>"),
+                                       extra_tags='alert-danger')
 
-                messages.success(self.request, f'Report {self.security_report.report_id} uploaded successfully.')
+                messages.success(self.request,
+                                 mark_safe(f"Report <strong>{self.security_report.report_id}</strong> uploaded successfully."))
 
         except Exception as e:
-            messages.error(self.request, f'Error uploading report: {str(e)}')
-            print(f"Error uploading report: {str(e)}")
+            messages.error(self.request,
+                           mark_safe(f"Error uploading report: <strong>{str(e)}</strong>"),
+                           extra_tags='alert-danger')
             return self.form_invalid(form)
 
         return super().form_valid(form)
     
     def form_invalid(self, form):
-        messages.error(self.request, 'Error uploading report. Please check the form and try again.')
+        messages.error(self.request,
+                       "Error uploading report. Please check the form and try again.",
+                       extra_tags='alert-danger')
         return super().form_invalid(form)
