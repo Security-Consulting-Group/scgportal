@@ -8,13 +8,11 @@
         </a>
 
         <div class="customer-name-container flex-grow-1 text-center">
-            {% comment %} {% if user.type == 'multi_account' or user.is_staff %} {% endcomment %}
-                {% if selected_customer %}
-                    <span class="navbar-text">
-                        <strong>{{ selected_customer.customer_name }}</strong>
-                    </span>
-                {% endif %}
-            {% comment %} {% endif %} {% endcomment %}
+            {% if selected_customer %}
+                <span class="navbar-text">
+                    <strong>{{ selected_customer.customer_name }}</strong>
+                </span>
+            {% endif %}
         </div>
 
         <button data-bs-toggle="collapse" class="navbar-toggler border rounded border-2 border-white" data-bs-target="#navcol-1">
@@ -24,7 +22,7 @@
         <div class="collapse navbar-collapse justify-content-end" id="navcol-1">
             <ul class="navbar-nav d-flex justify-content-around" style="max-width: 550px;">
                 {% if user.is_authenticated %}
-                    {% if user.type == 'multi_account' or user.is_staff %}
+                    {% if user.type == 'multi_account' or user.type == 'staff' %}
                         <li class="nav-item"><a class="nav-link" href="{% dashboard_url %}">Accounts</a></li>
                         <li class="nav-item divider">.</li>
                     {% endif %}
@@ -33,16 +31,16 @@
                         {% if perms.contracts.view_contract %}
                             <li class="nav-item"><a class="nav-link" href="{% url 'contracts:contract-list' customer_id=selected_customer.customer_id %}">Contracts</a></li>
                         {% endif %}
-                        {% if perms.sec_reports.view_securityreport %}
-                            <li class="nav-item"><a class="nav-link" href="{% url 'sec_reports:report-list' customer_id=selected_customer.customer_id %}">Reports</a></li>
+                        {% if perms.reports.view_securityreport %}
+                            <li class="nav-item"><a class="nav-link" href="{% url 'reports:report_selection' customer_id=selected_customer.customer_id %}">Reports</a></li>
                         {% endif %}
                         {% if perms.users.add_customuser or perms.users.add_customer_user %}
                             <li class="nav-item"><a class="nav-link" href="{% url 'users:user-list' customer_id=selected_customer.customer_id %}">Users</a></li>
                         {% endif %}
-                    {% elif user.is_staff %}
-                        <li class="nav-item"><a class="nav-link" href="{% url 'services:service-list' %}">Services</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'signatures:signature_list' %}">Signatures</a></li>
-                    {% endif %}
+                    {% elif user.type == 'staff' %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'inventories:inventory_selection' %}">Inventories</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'signatures:signature_selection' %}">Signatures</a></li>
+                        {% endif %}
                     <li class="nav-item dropdown nav-acc user-info">
                         <a class="dropdown-toggle nav-link" aria-expanded="false" data-bs-toggle="dropdown" href="#">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="-32 0 512 512" width="1em" height="1em" fill="currentColor">

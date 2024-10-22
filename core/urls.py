@@ -15,14 +15,14 @@ urlpatterns = [
     
     # App-specific URLs
     path('accounts/', include('customers.urls'), name='customers'),
-    path('services/', include('services.urls'), name='services'),
+    path('inventories/', include('inventories.urls', namespace='inventories')),
     path('signatures/', include('signatures.urls'), name='signatures'),
     
     # Customer-specific paths
     path('<uuid:customer_id>/', include([
         path('dashboard/', include('dashboard.urls', namespace='dashboard')),
         path('contracts/', include('contracts.urls')),
-        path('reports/', include('sec_reports.urls')),
+        path('reports/', include('reports.urls')),
         path('payments/', include('payments.urls')),
         path('users/', include('users.urls')),
     ])),

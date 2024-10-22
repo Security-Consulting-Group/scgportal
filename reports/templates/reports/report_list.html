@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h2 class="main_heading">{{ service.service_name }} Reports</h2>
+
+<hr>
+{% if service.report_type.name == 'support' %}
+    {% if perms.reports.add_support %}
+    <a href="{% url 'reports:report_create' customer_id=request.selected_customer.customer_id service_id=service.service_id %}" class="btn btn-primary mb-3">
+        Create New Report
+    </a>
+    {% endif %}
+{% else %}
+    {% if perms.reports.add_nessusreport or perms.reports.add_burpsuitereport %}
+    <a href="{% url 'reports:report_upload' customer_id=request.selected_customer.customer_id service_id=service.service_id %}" class="btn btn-primary mb-3">
+        Upload New Report
+    </a>
+    {% endif %}
+{% endif %}
+
+{% comment %} {% if perms.reports.add_nessusreport or perms.reports.add_burpsuitereport %}
+<a href="{% url 'reports:report_upload' customer_id=request.selected_customer.customer_id service_id=service.service_id %}" class="btn btn-primary mb-3">Upload New Report</a>
+{% endif %} {% endcomment %}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Report ID</th>
+            <th>Name</th>
+            <th>Contract</th>
+            <th>Date</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for report in reports %}
+        <tr>
+            <td><a href="{% url 'reports:report_detail' customer_id=report.customer.customer_id service_id=service.service_id pk=report.report_id %}">{{ report.report_id }}</a></td>
+            <td>{{ report.name }}</td>
+            <td>{% if report.contract %}{{ report.contract.contract_id }}{% else %}N/A{% endif %}</td>
+            <td>{{ report.date }}</td>
+            <td>
+                {% if perms.reports.delete_nessusreport or perms.reports.delete_burpsuitereport or perms.reports.delete_support%}
+                <a href="{% url 'reports:report_delete' customer_id=report.customer.customer_id service_id=service.service_id pk=report.report_id %}" class="btn btn-danger btn-sm">Delete</a>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% if is_paginated %}
+<nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page=1" aria-label="First">&laquo;&laquo;</a></li>
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">&laquo;</a></li>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+                <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+            {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">&raquo;</a></li>
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">&raquo;&raquo;</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+<div class="pagination-info text-center my-3">
+    Showing {{ page_obj.start_index }} - {{ page_obj.end_index }} of {{ paginator.count }} Reports
+</div>
+
+{% endblock %}

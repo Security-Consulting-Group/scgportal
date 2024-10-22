@@ -13,11 +13,6 @@
         <div class="col-md-4">
             {{ form.contract_end_date|as_crispy_field }}
         </div>
-        {% if form.instance.pk %}
-        <div class="col-md-4">
-            {{ form.contract_status|as_crispy_field }}
-        </div>
-        {% endif %}
     </div>
     <div class="row">
         <div class="col-md-4">
@@ -47,11 +42,6 @@
                     </div>
                     <div class="col-md-2">
                         {{ service_form.discount|as_crispy_field }}
-                    </div>
-                    <div class="col-md-1">
-                        {% if services.can_delete %}
-                            {{ service_form.DELETE|as_crispy_field }}
-                        {% endif %}
                     </div>
                 </div>
             </div>

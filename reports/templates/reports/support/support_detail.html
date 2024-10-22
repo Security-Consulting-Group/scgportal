@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Support Report Details</h2>
+<hr>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">{{ report.name }}</h5>
+        
+        <dl class="row">
+            <dt class="col-sm-3">Report ID</dt>
+            <dd class="col-sm-9">{{ report.report_id }}</dd>
+            
+            <dt class="col-sm-3">Customer</dt>
+            <dd class="col-sm-9">{{ report.customer.customer_name }}</dd>
+            
+            <dt class="col-sm-3">Contract</dt>
+            <dd class="col-sm-9">{% if report.contract %}{{ report.contract.contract_id }}{% else %}N/A{% endif %}</dd>
+            
+            <dt class="col-sm-3">Date</dt>
+            <dd class="col-sm-9">{{ report.date }}</dd>
+            
+            <dt class="col-sm-3">Level of Effort</dt>
+            <dd class="col-sm-9">{{ report.loe }} hours</dd>
+            
+            <dt class="col-sm-3">Comments</dt>
+            <dd class="col-sm-9">{{ report.comments|linebreaks }}</dd>
+        </dl>
+    </div>
+</div>
+<hr>
+<div class="right-aligned">
+    <a href="{% url 'reports:report_list' customer_id=report.customer.customer_id service_id=report.service.service_id %}" class="btn btn-secondary">Back to List</a>
+</div>
+{% endblock %}

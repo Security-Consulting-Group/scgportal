@@ -1,8 +1,10 @@
+from django.views import View
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from core.mixins import SelectedCustomerRequiredMixin
 from django.urls import reverse_lazy
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.forms import inlineformset_factory
@@ -13,6 +15,8 @@ from contracts.models import Contract, ContractService
 from contracts.forms import ContractForm, ServiceQuantityForm
 from payments.forms import PaymentForm
 from decimal import Decimal
+from django.core.exceptions import PermissionDenied
+from django.core.exceptions import ValidationError
 
 
 ServiceFormSet = inlineformset_factory(
@@ -117,6 +121,11 @@ class ContractCreateView(SelectedCustomerRequiredMixin, PermissionRequiredMixin,
     def get_success_url(self):
         return reverse_lazy('contracts:contract-list', kwargs={'customer_id': self.request.selected_customer.customer_id})
 
+
+import logging
+
+logger = logging.getLogger(__name__)
+
 class ContractUpdateView(SelectedCustomerRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = Contract
     form_class = ContractForm
@@ -147,23 +156,36 @@ class ContractUpdateView(SelectedCustomerRequiredMixin, PermissionRequiredMixin,
     def form_valid(self, form):
         context = self.get_context_data()
         services = context['services']
-        with transaction.atomic():
-            self.object = form.save(commit=False)
-            if services.is_valid():
-                services.instance = self.object
-                self.object.save()
-                services.save()
-            else:
-                return self.form_invalid(form)
-            self.object.calculate_total()
-        messages.info(self.request,
-                      mark_safe(f"Contract '<strong>{self.object.contract_id}</strong>' has been updated successfully."),
-                      extra_tags='alert-primary')
-        return super().form_valid(form)
+        try:
+            with transaction.atomic():
+                self.object = form.save(commit=False)
+                if services.is_valid():
+                    logger.info(f"Services formset is valid for contract {self.object.contract_id}")
+                    services.instance = self.object
+                    self.object.save()
+                    services.save()
+                    logger.info(f"Contract {self.object.contract_id} and its services saved successfully")
+                else:
+                    logger.error(f"Services formset is invalid for contract {self.object.contract_id}: {services.errors}")
+                    return self.form_invalid(form)
+                self.object.calculate_total()
+            messages.info(self.request,
+                          mark_safe(f"Contract '<strong>{self.object.contract_id}</strong>' has been updated successfully."),
+                          extra_tags='alert-primary')
+            return super().form_valid(form)
+        except Exception as e:
+            logger.error(f"Unexpected error occurred: {str(e)}")
+            form.add_error(None, "An unexpected error occurred. Please try again.")
+            return self.form_invalid(form)
 
     def form_invalid(self, form):
+        logger.error(f"Form is invalid for contract {self.object.contract_id if self.object else 'New'}: {form.errors}")
         context = self.get_context_data()
         services = context['services']
+        if not services.is_valid():
+            logger.error(f"Services formset is invalid: {services.errors}")
+        for field, errors in form.errors.items():
+            logger.error(f"Field '{field}' errors: {errors}")
         return self.render_to_response(self.get_context_data(form=form))
 
 class ContractDeleteView(SelectedCustomerRequiredMixin, PermissionRequiredMixin, DeleteView):
@@ -196,3 +218,60 @@ class ContractDeleteView(SelectedCustomerRequiredMixin, PermissionRequiredMixin,
 
     def post(self, request, *args, **kwargs):
         return self.delete(request, *args, **kwargs)
+    
+class ContractStatusChangeView(SelectedCustomerRequiredMixin, PermissionRequiredMixin, View):
+    permission_required = 'contracts.change_contract'
+
+    def post(self, request, *args, **kwargs):
+        contract = get_object_or_404(Contract, 
+                                     contract_id=kwargs['contract_id'], 
+                                     customer=self.request.selected_customer)
+        new_status = request.POST.get('status')
+        if new_status in dict(Contract.CONTRACT_STATUS_CHOICES):
+            contract.contract_status = new_status
+            contract.save()
+            return JsonResponse({
+                'success': True,
+                'new_status': contract.get_contract_status_display()
+            })
+        return JsonResponse({'success': False, 'error': 'Invalid status'}, status=400)
+    
+class ContractServiceDeleteView(View):
+    def post(self, request, *args, **kwargs):
+        try:
+            contract_service = get_object_or_404(
+                ContractService, 
+                id=kwargs['service_id'], 
+                contract__contract_id=kwargs['contract_id'], 
+                contract__customer__customer_id=kwargs['customer_id']
+            )
+            
+            if not request.user.has_perm('contracts.delete_contractservice'):
+                raise PermissionDenied
+
+            service_name = contract_service.service.service_name
+            contract = contract_service.contract
+            contract_service.delete()
+
+            contract.calculate_total()
+
+            messages.warning(request,
+                             mark_safe(f"Service '<strong>{service_name}</strong>' has been successfully removed from the contract."),
+                             extra_tags='alert-warning')
+            
+            return JsonResponse({
+                'success': True, 
+                'message': f"Service '{service_name}' has been successfully removed from the contract.",
+                'contract_data': {
+                    'sub_total': str(contract.sub_total),
+                    'discount': str(contract.discount) if contract.discount is not None else 'N/A',
+                    'taxes': str(contract.taxes),
+                    'taxes_amount': str(contract.taxes_amount),
+                    'total': str(contract.total),
+                    'balance': str(contract.balance)
+                }
+            })
+        except PermissionDenied:
+            return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)

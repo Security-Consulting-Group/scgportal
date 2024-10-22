@@ -31,12 +31,12 @@ INSTALLED_APPS = [
     # My Apps
     'customers',
     'contracts',
-    'services',
-    'signatures',
-    'dashboard',
     'payments',
-    'sec_reports',
+    'inventories',
+    'reports',
+    'signatures',
     'users',
+    'dashboard',
     'notifications',
 ]
 
@@ -136,7 +136,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+# TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/New_York'
 
 USE_I18N = True
 

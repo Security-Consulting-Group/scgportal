@@ -25,7 +25,7 @@ severity_processed_tag = root.find("./Policy/Preferences/ServerPreferences/prefe
 
 alert_reports = []
 data = {
-    "scan_date": f"{severity_processed_tag[:4]}-{severity_processed_tag[4:6]}-{severity_processed_tag[6:8]}",
+    "date": f"{severity_processed_tag[:4]}-{severity_processed_tag[4:6]}-{severity_processed_tag[6:8]}",
     "inventory": root.find(".//preference[name='TARGET']/value").text.strip().split(','),
     "alert_report": alert_reports
 }

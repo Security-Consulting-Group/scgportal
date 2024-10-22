@@ -17,10 +17,14 @@
             <th>Customer</th>
             <th>Start Date</th>
             <th>End Date</th>
+            {% if perms.contracts.change_contract %}
             <th>Status</th>
+            {% endif %}
             <th>Total</th>
             <th>Balance</th>
+            {% if perms.contracts.change_contract %}
             <th>Actions</th>
+            {% endif %}
         </tr>
     </thead>
     <tbody>
@@ -30,7 +34,22 @@
             <td>{{ contract.customer.customer_name }}</td>
             <td>{{ contract.contract_start_date }}</td>
             <td>{{ contract.contract_end_date }}</td>
-            <td>{{ contract.get_contract_status_display }}</td>
+            {% if perms.contracts.change_contract %}
+            <td>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        {{ contract.get_contract_status_display }}
+                    </button>
+                    <ul class="dropdown-menu">
+                        {% for status, display in contract.CONTRACT_STATUS_CHOICES %}
+                            {% if status != contract.contract_status %}
+                                <li><a class="dropdown-item change-status" href="#" data-contract-id="{{ contract.contract_id }}" data-status="{{ status }}">{{ display }}</a></li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            </td>
+            {% endif %}
             <td>{{ contract.total }}</td>
             <td>{{ contract.balance }}</td>
             <td>
@@ -50,4 +69,58 @@
     </tbody>
 </table>
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const changeStatusLinks = document.querySelectorAll('.change-status');
+        
+        changeStatusLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const contractId = this.dataset.contractId;
+                const newStatus = this.dataset.status;
+                const statusButton = this.closest('.btn-group').querySelector('.dropdown-toggle');
+    
+                fetch(`{% url 'contracts:contract-list' customer_id=selected_customer.customer_id %}${contractId}/change-status/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: `status=${newStatus}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        statusButton.textContent = data.new_status;
+                        this.closest('.dropdown-menu').querySelectorAll('a').forEach(item => {
+                            item.style.display = 'block';
+                        });
+                        this.style.display = 'none';
+                    } else {
+                        console.error('Error changing status:', data.error);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            });
+        });
+    
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    });
+    </script>
 {% endblock %}

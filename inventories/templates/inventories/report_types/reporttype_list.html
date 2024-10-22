@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<h2>Report Types</h2>
+
+<hr>
+
+<a href="{% url 'inventories:reporttype_create' %}" class="btn btn-primary mb-3">Add New Report Type</a>
+<a href="{% url 'inventories:inventory_selection' %}" class="btn btn-secondary mb-3">Back</a>
+
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Is active</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for reporttype in reporttypes %}
+        <tr>
+            <td><a href="{% url 'inventories:reporttype_detail' reporttype.pk %}">{{ reporttype.name }}</a></td>
+            <td>{{ reporttype.description }}</td>
+            <td>{{ reporttype.is_active }}</td>
+            <td>
+                <a href="{% url 'inventories:reporttype_update' reporttype.pk %}" class="btn btn-warning btn-sm">Edit</a>
+                <a href="{% url 'inventories:reporttype_delete' reporttype.pk %}" class="btn btn-danger btn-sm">Delete</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4">No report types found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
