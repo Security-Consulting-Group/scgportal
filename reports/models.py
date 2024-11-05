@@ -60,7 +60,34 @@ class BurpSuiteVulnerability(models.Model):
 
     def __str__(self):
         return f"{self.signature} - {self.host} - {self.severity}"
-    
-class Support(BaseReport):
-    comments = models.TextField(max_length=1000)
-    loe = models.IntegerField(verbose_name="Level of Effort (hours)")
+
+class SupportReport(BaseReport):
+    """Virtual report type to show engagement data"""
+    class Meta:
+        managed = False  # This ensures Django won't create a DB table
+        default_permissions = ('view',)  # Only allow viewing
+
+    @classmethod
+    def generate_for_service(cls, service, customer):
+        """Generate a virtual report from engagements data"""
+        from engagements.models import Engagement, TimeEntry
+        
+        total_hours = TimeEntry.objects.filter(
+            engagement__contract_service__service=service,
+            engagement__customer=customer
+        ).aggregate(total=models.Sum('hours_spent'))['total'] or Decimal('0')
+        
+        engagement_stats = Engagement.objects.filter(
+            contract_service__service=service,
+            customer=customer
+        ).aggregate(
+            open_count=models.Count('pk', filter=models.Q(status='OPEN')),
+            in_progress_count=models.Count('pk', filter=models.Q(status='IN_PROGRESS')),
+            resolved_count=models.Count('pk', filter=models.Q(status='RESOLVED')),
+            cancelled_count=models.Count('pk', filter=models.Q(status='CANCELLED')),
+        )
+        
+        return {
+            'total_hours': total_hours,
+            'stats': engagement_stats,
+        }

@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Engagements</h2>
+    {% if perms.engagements.add_engagement %}
+        {% if has_valid_contracts %}
+        <a href="{% url 'engagements:engagement-create' customer_id=customer.customer_id %}" class="btn btn-primary">New Engagement</a>
+        {% endif %}
+    {% endif %}
+</div>
+{% if not has_valid_contracts %}
+<div class="alert alert-warning">
+    <i class="fas fa-exclamation-triangle"></i>
+    There are no active contracts with engagement services. Please create a contract first.
+</div>
+{% endif %}
+<hr>
+<!-- Filters -->
+
+<form method="get" class="row g-3 mb-3">
+    <!-- Contract Filter -->
+    <div class="col-md-4">
+        <select name="contract" class="form-select">
+            <option value="">All Contracts</option>
+            {% for contract in contracts %}
+            <option value="{{ contract.contract_id }}" {% if contract.contract_id == selected_contract %}selected{% endif %}>
+                {{ contract.contract_id }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- Priority Filter -->
+    <div class="col-md-3">
+        <select name="priority" class="form-select">
+            <option value="">All Severities</option>
+            {% for priority, label in view.model.PRIORITY_CHOICES %}
+            <option value="{{ priority }}" {% if priority == selected_priority %}selected{% endif %}>
+                {{ label }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- Status Filter -->
+    <div class="col-md-3">
+        <select name="status" class="form-select">
+            <option value="">All Statuses</option>
+            {% for status, label in view.model.STATUS_CHOICES %}
+            <option value="{{ status }}" {% if status == selected_status %}selected{% endif %}>
+                {{ label }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-secondary">Apply Filters</button>
+    </div>
+</form>
+
+
+<!-- Engagements List -->
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Title</th>
+            <th>Created</th>
+            <th>Status</th>
+            <th>Severity</th>
+            <th>Contract</th>
+            <th>Hours U/T</th>
+
+        </tr>
+    </thead>
+    <tbody>
+        {% for engagement in engagements %}
+        <tr>
+            <td><a href="{% url 'engagements:engagement-detail' customer_id=customer.customer_id engagement_id=engagement.engagement_id %}">{{ engagement.engagement_id }}</a></td>
+            <td>{{ engagement.name }}</td>
+            <td>{{ engagement.created_at }}</td>
+            <td>{{ engagement.get_status_display }}</td>
+            <td><span class="{{ engagement.priority_label }}">{{ engagement.get_priority_display }}</span></td>
+            <td>{{ engagement.contract_service }}</td>
+            <td>{{ engagement.engagement_hours|default:"0" }}/{{ engagement.contract_service.quantity }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="7">No Engagements found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const contractSelect = document.querySelector('select[name="contract"]');
+    const serviceSelect = document.querySelector('select[name="contract_service"]');
+
+    if (contractSelect && serviceSelect) {
+        contractSelect.addEventListener('change', async function() {
+            const contractId = this.value;
+            if (contractId) {
+                const response = await fetch(`/api/contracts/${contractId}/services/support/`);
+                const services = await response.json();
+                serviceSelect.innerHTML = '<option value="">Select a service</option>';
+                services.forEach(service => {
+                    serviceSelect.innerHTML += `<option value="${service.id}">${service.name}</option>`;
+                });
+                serviceSelect.disabled = false;
+            } else {
+                serviceSelect.innerHTML = '<option value="">Select a contract first</option>';
+                serviceSelect.disabled = true;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

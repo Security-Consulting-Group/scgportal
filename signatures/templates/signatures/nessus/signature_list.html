@@ -2,13 +2,11 @@
 {% load dashboard_tags %}
 
 {% block content %}
-<h2>Nessus Signatures</h2>
-<hr>
-<div class="mb-3">
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Nessus Signatures</h2>
     <a href="{% url 'signatures:signature_create' scanner_type='nessus' %}" class="btn btn-primary">Add New Signature</a>
-    <a href="{% url 'signatures:signature_selection'%}" class="btn btn-secondary">Back</a>
-    {% comment %} <a href="{% url 'signatures:signature_upload' scanner_type='nessus' %}" class="btn btn-primary">Upload Signatures</a> {% endcomment %}
 </div>
+<hr>
 
 <div class="row g-3 mb-3">
     <div class="col-md-3">
@@ -54,6 +52,10 @@
                 <a href="{% url 'signatures:signature_delete' scanner_type='nessus' pk=signature.pk %}" class="btn btn-danger btn-sm">Delete</a>
             </td>
         </tr>
+        {% empty %}
+        <tr>
+            <td colspan="5">No Signatures found.</td>
+        </tr>
         {% endfor %}
     </tbody>
 </table>
@@ -95,7 +97,10 @@
     Showing {{ page_obj.start_index }} - {{ page_obj.end_index }} of {{ paginator.count }} signatures
 </div>
 {% endif %}
-
+<div class="right-aligned mt-3">
+    <a href="{% url 'signatures:signature_selection'%}" class="btn btn-secondary">Back</a>
+    {% comment %} <a href="{% url 'signatures:signature_upload' scanner_type='nessus' %}" class="btn btn-primary">Upload Signatures</a> {% endcomment %}
+</div>
 {% endblock %}
 
 {% block extra_js %}

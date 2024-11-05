@@ -1,12 +1,13 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Users</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Users</h2>
+    {% if perms.users.add_customuser or perms.users.add_customer_user %}
+    <a href="{% url 'users:user-create' customer_id=request.selected_customer.customer_id %}" class="btn btn-primary">Create New User</a>
+    {% endif %}
+</div>
 <hr>
-
-{% if perms.users.add_customuser or perms.users.add_customer_user %}
-<a href="{% url 'users:user-create' customer_id=request.selected_customer.customer_id %}" class="btn btn-primary mb-3">Create New User</a>
-{% endif %}
 <table class="table">
     <thead>
         <tr>

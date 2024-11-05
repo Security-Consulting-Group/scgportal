@@ -2,13 +2,12 @@
 {% load static %}
 {% load dashboard_tags %}
 {% block content %}
-
-<h2>Services</h2>
-
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Services</h2>
+    <a href="{% url 'inventories:service_create' %}" class="btn btn-primary mb-3">Add New Service</a>
+</div>
 <hr>
 
-<a href="{% url 'inventories:service_create' %}" class="btn btn-primary mb-3">Add New Service</a>
-<a href="{% url 'inventories:inventory_selection' %}" class="btn btn-secondary mb-3">Back</a>
 
 
 <table class="table">
@@ -40,5 +39,7 @@
         {% endfor %}
     </tbody>
 </table>
-
+<div class="right-aligned mt-3">
+    <a href="{% url 'inventories:inventory_selection' %}" class="btn btn-secondary mb-3">Back</a>
+</div>
 {% endblock %}

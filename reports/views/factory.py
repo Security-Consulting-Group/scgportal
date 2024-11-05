@@ -14,7 +14,7 @@ from .burpsuite import (
     BurpSuiteReportListView, BurpSuiteReportDetailView, BurpSuiteReportUploadView, BurpSuiteReportDeleteView
 )
 from .support import (
-    SupportReportListView, SupportReportDetailView, SupportReportCreateView, SupportReportDeleteView
+    SupportReportListView, SupportReportDetailView
 )
 
 class ReportViewFactory:
@@ -35,11 +35,9 @@ class ReportViewFactory:
                 'upload': BurpSuiteReportUploadView,
                 'delete': BurpSuiteReportDeleteView,
             },
-            'support': {
+            'support': {  # Add this section
                 'list': SupportReportListView,
                 'detail': SupportReportDetailView,
-                'create': SupportReportCreateView,
-                'delete': SupportReportDeleteView,
             }
     }
 
@@ -68,8 +66,7 @@ class ReportSelectionView(SelectedCustomerRequiredMixin, LoginRequiredMixin, Tem
         # Annotate services with report count for the selected customer
         services = services.annotate(
             report_count=Count('nessusreport', filter=Q(nessusreport__customer=self.request.selected_customer), distinct=True) + 
-            Count('burpsuitereport', filter=Q(burpsuitereport__customer=self.request.selected_customer), distinct=True) +
-            Count('support', filter=Q(support__customer=self.request.selected_customer), distinct=True)
+            Count('burpsuitereport', filter=Q(burpsuitereport__customer=self.request.selected_customer), distinct=True)
         )
 
         # Group services by report type
@@ -93,20 +90,12 @@ def report_list_view(request, customer_id, service_id):
 def report_detail_view(request, customer_id, service_id, pk):
     service = get_object_or_404(Service, service_id=service_id)
     view_class = ReportViewFactory.get_view_class(service, 'detail')
-    return view_class.as_view()(request, customer_id=customer_id, service_id=service_id, pk=pk)
-
-# def report_create_view(request, customer_id, service_id):
-#     service = get_object_or_404(Service, service_id=service_id)
-#     view_class = ReportViewFactory.get_view_class(service, 'create')
-#     return view_class.as_view()(request, customer_id=customer_id, service_id=service_id)
-
-def report_create_view(request, customer_id, service_id):
-    service = get_object_or_404(Service, service_id=service_id)
-    if service.report_type.name == 'support':
-        view_class = ReportViewFactory.get_view_class(service, 'create')
+    
+    # Pass different kwargs based on whether it's a support report
+    if service.report_type.name.lower() == 'support':
+        return view_class.as_view()(request, customer_id=customer_id, service_id=service_id, contract_id=pk)
     else:
-        view_class = ReportViewFactory.get_view_class(service, 'upload')
-    return view_class.as_view()(request, customer_id=customer_id, service_id=service_id)
+        return view_class.as_view()(request, customer_id=customer_id, service_id=service_id, pk=pk)
 
 def report_upload_view(request, customer_id, service_id):
     service = get_object_or_404(Service, service_id=service_id)

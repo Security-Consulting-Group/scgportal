@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Add Time Entry for {{ engagement.name }}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Hours Spent</label>
+                            {{ form.hours_spent }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Client Comment</label>
+                            {{ form.client_comment }}
+                        </div>
+
+                        {% if perms.engagements.view_internal_notes %}
+                        <div class="mb-3">
+                            <label class="form-label">Internal Notes</label>
+                            {{ form.internal_notes }}
+                        </div>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'engagements:engagement-detail' customer_id=customer.customer_id engagement_id=engagement.engagement_id %}" 
+                               class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Add Time Entry</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

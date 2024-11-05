@@ -1,53 +1,96 @@
 {% extends 'base.html' %}
 {% block content %}
-
-<h2 class="main_heading">{{ service.service_name }} Reports</h2>
-
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>{{ service.service_name }} Reports</h2>
+    {% if not is_support_report %}
+        {% if perms.reports.add_nessusreport or perms.reports.add_burpsuitereport %}
+            <a href="{% url 'reports:report_upload' customer_id=request.selected_customer.customer_id service_id=service.service_id %}" class="btn btn-primary mb-3">Upload New Report</a>
+        {% endif %}
+    {% endif %}
+</div>
 <hr>
-{% if service.report_type.name == 'support' %}
-    {% if perms.reports.add_support %}
-    <a href="{% url 'reports:report_create' customer_id=request.selected_customer.customer_id service_id=service.service_id %}" class="btn btn-primary mb-3">
-        Create New Report
-    </a>
-    {% endif %}
+
+{% if is_support_report %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Contract ID</th>
+                <th>Hours Contracted</th>
+                <th>Hours Used</th>
+                <th>Hours Remaining</th>
+                <th>Engagements</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for contract in reports %}
+                <tr>
+                    <td>
+                        <a href="{% url 'contracts:contract-detail' customer_id=customer.customer_id contract_id=contract.contract_id %}">
+                            {{ contract.contract_id }}
+                        </a>
+                    </td>
+                    <td>{{ contract.contracted_hours|default:"0" }}h</td>
+                    <td>{{ contract.total_hours|default:"0" }}h</td>
+                    <td>
+                        {% if contract.remaining_hours < 0 %}
+                            <span class="text-danger">{{ contract.remaining_hours|default:"0" }}h</span>
+                        {% else %}
+                            {{ contract.remaining_hours|default:"0" }}h
+                        {% endif %}
+                    </td>
+                    <td>{{ contract.engagement_count|default:"0" }}</td>
+                    <td>{{ contract.get_contract_status_display }}</td>
+                    <td>
+                        <a href="{% url 'reports:support_report_detail' customer_id=customer.customer_id service_id=service.service_id pk=contract.contract_id %}" 
+                           class="btn btn-primary btn-sm">View</a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center">No contracts found.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 {% else %}
-    {% if perms.reports.add_nessusreport or perms.reports.add_burpsuitereport %}
-    <a href="{% url 'reports:report_upload' customer_id=request.selected_customer.customer_id service_id=service.service_id %}" class="btn btn-primary mb-3">
-        Upload New Report
-    </a>
-    {% endif %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Contract</th>
+                <th>Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for report in reports %}
+                <tr>
+                    <td>
+                        <a href="{% url 'reports:report_detail' customer_id=report.customer.customer_id service_id=service.service_id pk=report.report_id %}">{{ report.report_id }}</a>
+                    </td>
+                    <td>{{ report.name }}</td>
+                    <td>{% if report.contract %}{{ report.contract.contract_id }}{% else %}N/A{% endif %}</td>
+                    <td>{% if is_support_report %}{{ report.created_at|date:"Y-m-d" }}{% else %}{{ report.date }}{% endif %}</td>
+                    <td>
+                        {% if not is_support_report %}
+                            {% if perms.reports.delete_nessusreport or perms.reports.delete_burpsuitereport %}
+                                <a href="{% url 'reports:report_delete' customer_id=report.customer.customer_id service_id=service.service_id pk=report.report_id %}" class="btn btn-danger btn-sm">Delete</a>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center">No Reports found.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 {% endif %}
 
-{% comment %} {% if perms.reports.add_nessusreport or perms.reports.add_burpsuitereport %}
-<a href="{% url 'reports:report_upload' customer_id=request.selected_customer.customer_id service_id=service.service_id %}" class="btn btn-primary mb-3">Upload New Report</a>
-{% endif %} {% endcomment %}
-
-<table class="table">
-    <thead>
-        <tr>
-            <th>Report ID</th>
-            <th>Name</th>
-            <th>Contract</th>
-            <th>Date</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for report in reports %}
-        <tr>
-            <td><a href="{% url 'reports:report_detail' customer_id=report.customer.customer_id service_id=service.service_id pk=report.report_id %}">{{ report.report_id }}</a></td>
-            <td>{{ report.name }}</td>
-            <td>{% if report.contract %}{{ report.contract.contract_id }}{% else %}N/A{% endif %}</td>
-            <td>{{ report.date }}</td>
-            <td>
-                {% if perms.reports.delete_nessusreport or perms.reports.delete_burpsuitereport or perms.reports.delete_support%}
-                <a href="{% url 'reports:report_delete' customer_id=report.customer.customer_id service_id=service.service_id pk=report.report_id %}" class="btn btn-danger btn-sm">Delete</a>
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
 
 {% if is_paginated %}
 <nav aria-label="Page navigation">

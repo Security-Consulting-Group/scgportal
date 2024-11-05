@@ -18,7 +18,6 @@ from django.http import HttpResponseRedirect
 from users.forms import CustomUserCreationForm, CustomUserChangeForm, ProfileUpdateForm
 from notifications.services import send_password_reset_email, send_new_user_notification
 
-
 User = get_user_model()
 
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
@@ -43,6 +42,16 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
 
 class CustomLoginView(LoginView):
     template_name = 'users/login.html'
+
+    def get(self, request, *args, **kwargs):
+        # Check if user was logged out due to session timeout
+        if request.GET.get('timeout') == '1':
+            messages.warning(
+                request,
+                "Your session has expired due to inactivity. Please log in again.",
+                extra_tags='alert-warning'
+            )
+        return super().get(request, *args, **kwargs)
 
     def form_invalid(self, form):
         messages.error(self.request,

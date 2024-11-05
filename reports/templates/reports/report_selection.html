@@ -15,10 +15,12 @@
                                 <h5 class="card-title">{{ service.service_name }}</h5>
                                 <p class="card-text">{{ service.service_description }}</p>
                                 <p class="card-text mt-auto">
+                                    {% if service.report_type.name|lower != 'support' %}
                                     <strong>Reports: {{ service.report_count }}</strong>
                                     {% if service.report_count == 0 %}
                                         <br><small class="text-muted">No reports yet. Click to upload.</small>
                                     {% endif %}
+                                {% endif %}
                                 </p>
                             </div>
                         </div>

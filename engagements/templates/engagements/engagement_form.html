@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    {% if object %}
+    <h2>Edit {{ engagement.engagement_id }}</h2>
+    {% else %}
+    <h2>New Engagement</h2>
+    {% endif %}
+</div>
+<hr>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" id="engagementForm">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        {{ form.name|as_crispy_field }}
+                        {% if form.name.errors %}
+                            <div class="invalid-feedback">{{ form.name.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.priority|as_crispy_field }}
+                                {% if form.priority.errors %}
+                                    <div class="invalid-feedback">{{ form.priority.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.contract_service|as_crispy_field }}
+                                {% if form.contract_service.errors %}
+                                    <div class="invalid-feedback">{{ form.contract_service.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.client_description|as_crispy_field }}
+                        {% if form.client_description.errors %}
+                            <div class="invalid-feedback">{{ form.client_description.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    {% if perms.engagements.view_internal_notes %}
+                    <div class="mb-3">
+                        {{ form.internal_notes|as_crispy_field }}
+                        {% if form.internal_notes.errors %}
+                            <div class="invalid-feedback">{{ form.internal_notes.errors }}</div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'engagements:engagement-list' customer_id=customer.customer_id %}" 
+                        class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            {% if object %}Update{% else %}Create{% endif %} Engagement
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% if object %}
+    <div class="col-lg-4">
+        <div class="card" id="serviceInfoCard">
+            <div class="card-body">
+                <h5 class="card-title">Service Information</h5>
+                <div id="serviceDetails">
+                    <p class="mb-2">Contracted Hours: <span id="contractedHours">-</span></p>
+                    <p class="mb-2">Used Hours: <span id="usedHours">-</span></p>
+                    <p class="mb-2">Remaining Hours: <span id="remainingHours">-</span></p>
+                    <div class="progress">
+                        <div id="hoursProgress" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Select2
+
+        const contractServiceSelect = document.querySelector('[name="contract_service"]');
+        const serviceInfoCard = document.getElementById('serviceInfoCard');
+        
+        async function updateServiceInfo(serviceId) {
+            try {
+                const response = await fetch(`/engagements/api/service-hours/${serviceId}/`);
+                const data = await response.json();
+                
+                document.getElementById('contractedHours').textContent = data.contracted_hours;
+                document.getElementById('usedHours').textContent = data.used_hours;
+                document.getElementById('remainingHours').textContent = data.remaining_hours;
+                
+                // Update progress bar
+                const percentageUsed = (data.used_hours / data.contracted_hours) * 100;
+                const progressBar = document.getElementById('hoursProgress');
+                progressBar.style.width = `${percentageUsed}%`;
+                
+                // Add appropriate classes based on usage
+                progressBar.className = 'progress-bar';
+                if (percentageUsed >= 90) {
+                    progressBar.classList.add('bg-danger');
+                } else if (percentageUsed >= 75) {
+                    progressBar.classList.add('bg-warning');
+                } else {
+                    progressBar.classList.add('bg-success');
+                }
+                
+                // Show warning if hours are running low
+                if (percentageUsed >= 90) {
+                    // You can implement your own warning display logic here
+                    alert('Warning: Service hours are almost depleted!');
+                }
+            } catch (error) {
+                console.error('Error fetching service information:', error);
+            }
+        }
+        
+        // Update service info when service is selected
+        if (contractServiceSelect) {
+            contractServiceSelect.addEventListener('change', function() {
+                if (this.value) {
+                    updateServiceInfo(this.value);
+                }
+            });
+            
+            // Initial load if service is pre-selected
+            if (contractServiceSelect.value) {
+                updateServiceInfo(contractServiceSelect.value);
+            }
+        }
+    });
+</script>
+{% endblock %}
