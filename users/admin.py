@@ -1,7 +1,9 @@
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.admin import UserAdmin, GroupAdmin
+from django.contrib.auth.models import Group
 from django.utils.translation import gettext_lazy as _
-from .models import CustomUser
+from .models import CustomUser, CustomGroup
+
 
 class CustomUserAdmin(UserAdmin):
     model = CustomUser
@@ -28,4 +30,14 @@ class CustomUserAdmin(UserAdmin):
         return ", ".join([c.customer_name for c in obj.customers.all()])
     get_customers.short_description = 'Customers'
 
+class CustomGroupAdmin(GroupAdmin):
+    list_display = ('name', 'visibility')
+    list_filter = ('visibility',)
+    fieldsets = (
+        (None, {'fields': ('name', 'permissions')}),
+        (_('Visibility'), {'fields': ('visibility',)}),
+    )
+
+admin.site.unregister(Group)
+admin.site.register(CustomGroup, CustomGroupAdmin)
 admin.site.register(CustomUser, CustomUserAdmin)

@@ -1,4 +1,4 @@
-from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.contrib.auth.models import AbstractUser, BaseUserManager, Group
 from django.db import models
 from customers.models import Customer
 from django.utils.translation import gettext_lazy as _
@@ -101,3 +101,37 @@ class CustomUser(AbstractUser):
         For MULTI_ACCOUNT and STAFF users, this will be the first customer in their list.
         """
         return self.customers.first()
+    
+class CustomGroup(Group):
+    class GroupVisibility(models.TextChoices):
+        STAFF = 'staff', _('Staff Only')
+        MULTI_ACCOUNT = 'multi_account', _('Multi Account and Staff')
+        NORMAL = 'normal', _('All Users')
+
+    visibility = models.CharField(
+        max_length=20,
+        choices=GroupVisibility.choices,
+        default=GroupVisibility.NORMAL,
+        verbose_name=_('Group Visibility')
+    )
+
+    class Meta:
+        verbose_name = _('group')
+        verbose_name_plural = _('groups')
+
+    @classmethod
+    def get_visible_groups(cls, user_type):
+        """Returns queryset of groups visible to the given user type"""
+        if user_type == CustomUser.UserType.STAFF:
+            return cls.objects.all()
+        elif user_type == CustomUser.UserType.MULTI_ACCOUNT:
+            return cls.objects.filter(visibility__in=[
+                cls.GroupVisibility.MULTI_ACCOUNT,
+                cls.GroupVisibility.NORMAL
+            ])
+        else:  # NORMAL users
+            return cls.objects.filter(visibility=cls.GroupVisibility.NORMAL)
+
+    def save(self, *args, **kwargs):
+        # Create/update the underlying Group
+        super().save(*args, **kwargs)
