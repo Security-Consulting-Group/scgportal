@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<h2>Service Details</h2>
+
+<hr>
+
+<div class="row">
+    <div class="col-md-4">
+        <p><strong>Service ID:</strong> {{ service.service_id }}</p>
+        <p><strong>Description:</strong> {{ service.service_description }}</p>
+        <p><strong>Active:</strong> {{ service.is_active }}</p>
+    </div>
+    <div class="col-md-4">
+        <p><strong>Name:</strong> {{ service.service_name }}</p>
+        <p><strong>Price:</strong> {{ service.service_price }}</p>
+    </div>
+</div>
+
+<hr>
+
+<div class="text-right mt-3">
+    <a href="{% url 'inventories:service_list' %}" class="btn btn-secondary mt-3">Back to Service List</a>
+</div>
+
+{% endblock %}

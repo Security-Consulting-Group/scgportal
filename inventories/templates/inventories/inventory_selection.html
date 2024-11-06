@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<h2>Inventory Management</h2>
+
+<hr>
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <a href="{% url 'inventories:service_list' %}" class="text-decoration-none card-link">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">Services</h5>
+                    <p class="card-text">Manage services offered by your organization.</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-6 mb-4">
+        <a href="{% url 'inventories:reporttype_list' %}" class="text-decoration-none card-link">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">Report Types</h5>
+                    <p class="card-text">Manage different types of reports available.</p>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<style>
+    .card-link .card {
+        transition: transform 0.3s, box-shadow 0.3s, background-color 0.3s;
+    }
+    
+    .card-link:hover .card {
+        background-color: #f8f9fa;
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    }
+</style>
+{% endblock %}

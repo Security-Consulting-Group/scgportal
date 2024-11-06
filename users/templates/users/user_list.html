@@ -1,19 +1,22 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Users</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Users</h2>
+    {% if perms.users.add_customuser %}
+    <a href="{% url 'users:user-create' customer_id=request.selected_customer.customer_id %}" class="btn btn-primary">Create New User</a>
+    {% endif %}
+</div>
 <hr>
-
-{% if perms.users.add_customuser or perms.users.add_customer_user %}
-<a href="{% url 'users:user-create' customer_id=request.selected_customer.customer_id %}" class="btn btn-primary mb-3">Create New User</a>
-{% endif %}
 <table class="table">
     <thead>
         <tr>
             <th>Email</th>
             <th>Name</th>
             <th>Status</th>
+            {% if perms.users.change_customuser or perms.users.delete_customuser %}
             <th>Actions</th>
+            {% endif %}
         </tr>
     </thead>
     <tbody>
@@ -23,23 +26,31 @@
             <td>{{ user.get_full_name }}</td>
             <td>
                 {% if user.is_active %}
-                <form method="post" action="{% url 'users:user-deactivate' customer_id=request.selected_customer.customer_id pk=user.pk %}" style="display: inline;">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-sm btn-success">Active</button>
-                </form>
+                    {% if perms.users.change_customuser %}
+                    <form method="post" action="{% url 'users:user-deactivate' customer_id=request.selected_customer.customer_id pk=user.pk %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-success">Active</button>
+                    </form>
+                    {% else %}
+                    <span class="badge text-bg-success">Active</span>
+                    {% endif %}
                 {% else %}
-                <form method="post" action="{% url 'users:user-activate' customer_id=request.selected_customer.customer_id pk=user.pk %}" style="display: inline;">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-sm btn-warning">Inactive</button>
-                </form>
+                    {% if perms.users.change_customuser %}
+                    <form method="post" action="{% url 'users:user-activate' customer_id=request.selected_customer.customer_id pk=user.pk %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-warning">Inactive</button>
+                    </form>
+                    {% else %}
+                    <span class="badge text-bg-warning">Inactive</span>
+                    {% endif %}
                 {% endif %}
             </td>
             <td>
-                {% if perms.users.change_customuser or perms.users.change_customer_user %}
+                {% if perms.users.change_customuser %}
                 <a href="{% url 'users:reset-user-password' customer_id=request.selected_customer.customer_id pk=user.pk %}" class="btn btn-primary btn-sm">Reset Password</a>
                 <a href="{% url 'users:user-update' customer_id=request.selected_customer.customer_id pk=user.pk %}" class="btn btn-sm btn-warning">Edit</a>
                 {% endif %}
-                {% if perms.users.delete_customuser or perms.users.delete_customer_user %}
+                {% if perms.users.delete_customuser %}
                 <a href="{% url 'users:user-delete' customer_id=request.selected_customer.customer_id pk=user.pk %}" class="btn btn-danger btn-sm">Delete</a>
             {% endif %}
             </td>

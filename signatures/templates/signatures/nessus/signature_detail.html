@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h2>{{ signature.id }}: {{ signature.name }}</h2>
+
+<hr>
+
+<h4>Overview</h4>
+<div class="row">
+    <div class="col-md-6">
+        <p><strong>Description:</strong> {{ signature.description }}</p>
+        {% if signature.synopsis %}
+            <p><strong>Synopsis:</strong> {{ signature.synopsis }}</p>
+        {% endif %}
+    </div>
+    <div class="col-md-6">
+        {% if signature.solution %}
+            <p><strong>Solution:</strong> {{ signature.solution }}</p>
+        {% endif %}
+        {% if signature.references %}
+            <p><strong>See Also:</strong> {{ signature.references }}</p>
+        {% endif %}
+    </div>
+</div>
+
+<hr>
+
+<div class="row">
+    <div class="col-md-6">
+        <h4>Severity and Scoring</h4>
+        <p><strong>Severity:</strong> {{ signature.risk_factor }}</p>
+        {% if signature.cvss_base_score %}
+            <p><strong>CVSS Score:</strong> {{ signature.cvss_base_score }}</p>
+        {% endif %}
+        {% if signature.cvss3_base_score %}
+            <p><strong>CVSS3 Score:</strong> {{ signature.cvss3_base_score }}</p>
+        {% endif %}
+        {% if signature.vpr_score %}
+            <p><strong>VPR Score:</strong> {{ signature.vpr_score }}</p>
+        {% endif %}
+        {% if signature.epss_score %}
+            <p><strong>EPSS Score:</strong> {{ signature.epss_score }}</p>
+        {% endif %}
+    </div>
+    <div class="col-md-6">
+        <p><strong>Scanner:</strong> {{ signature.scanner_type }}</p>
+        {% if signature.plugin_modification_date %}
+            <p><strong>Nessus Last Update:</strong> {{ signature.plugin_modification_date }}</p>
+        {% endif %}
+        <p><strong>SCG Last Update:</strong> {{ signature.scg_last_update }}</p>
+    </div>
+</div>
+
+<hr>
+
+<div class="row">
+    <div class="col-md-6">
+        <h4>CVE & CPE</h4>
+        {% if signature.cve %}
+            <p><strong>CVE:</strong> {{ signature.cve }}</p>
+        {% endif %}
+        {% if signature.cvss_vector %}
+            <p><strong>CVSS Vector:</strong> {{ signature.cvss_vector }}</p>
+        {% endif %}
+        {% if signature.cvss3_vector %}
+            <p><strong>CVSS3 Vector:</strong> {{ signature.cvss3_vector }}</p>
+        {% endif %}
+        {% if signature.cpe %}
+            <p><strong>CPE:</strong> {{ signature.cpe }}</p>
+        {% endif %}
+    </div>
+    <div class="col-md-6">
+        <h4>Other Details</h4>
+        {% if signature.exploitability_ease %}
+            <p><strong>Exploitable:</strong> {{ signature.exploitability_ease }}</p>
+        {% endif %}
+        {% if signature.exploit_code_maturity %}
+            <p><strong>Exploit Maturity:</strong> {{ signature.exploit_code_maturity }}</p>
+        {% endif %}
+        {% if signature.family_name %}
+            <p><strong>Family:</strong> {{ signature.family_name }}</p>
+        {% endif %}
+        {% if signature.agent %}
+            <p><strong>Agent:</strong> {{ signature.agent }}</p>
+        {% endif %}
+    </div>
+</div>
+
+<hr>
+
+<div class="text-right">
+    <a href="{% url 'signatures:signature_list' scanner_type='nessus' %}" class="btn btn-secondary">Back to List</a>
+</div>
+
+{% endblock %}
+
+{% comment %} {% extends 'base.html' %}
+
+{% block content %}
+<h2>{{ signature.id }}: {{ signature.plugin_name }}</h2>
+<hr>
+<h4>Overview</h4>
+<div class="row">
+  <div class="col-md-6">
+    <p><strong>Description:</strong> {{ signature.description }}</p>
+    <p><strong>Synopsis:</strong> {{ signature.synopsis }}</p>
+  </div>
+    <div class="col-md-6">
+    <p><strong>Solution:</strong> {{ signature.solution }}</p>
+    <p><strong>See Also:</strong> <a href="{{ signature.see_also }}">{{ signature.see_also }}</a></p>
+  </div>
+</div>
+<hr>
+<div class="row">
+  <div class="col-md-6">
+    <h4>Severity and Scoring</h4>
+    <p><strong>Severity:</strong> {{ signature.risk_factor }}</p>
+    <p><strong>CVSS Score:</strong> {{ signature.cvss_base_score }}</p>
+    <p><strong>CVSS3 Score:</strong> {{ signature.cvss3_base_score }}</p>
+    <p><strong>VPR Score:</strong> {{ signature.vpr_score }}</p>
+    <p><strong>EPSS Score:</strong> {{ signature.epss_score }}</p>
+  </div>
+  <div class="col-md-6">
+    <p><strong>Scanner:</strong> {{ signature.scanner_type }}</p>
+    <p><strong>Nessus Last Update:</strong> {{ signature.plugin_modification_date }}</p>
+    <p><strong>SCG Last Update:</strong> {{ signature.scg_last_update }}</p>
+  </div>
+</div>
+<hr>
+<div class="row">
+  <div class="col-md-6">
+    <h4>CVS & CVE</h4>
+    <p><strong>CVE:</strong> {{ signature.cve }}</p>
+    <p><strong>CVSS Vector:</strong> {{ signature.cvss_vector }}</p>
+    <p><strong>CVSS3 Vector:</strong> {{ signature.cvss3_vector }}</p>
+    <p><strong>CPE:</strong> {{ signature.cpe }}</p>
+  </div>
+  <div class="col-md-6">
+    <h4>Other Details</h4>
+    <p><strong>Exploitable:</strong> {{ signature.exploitability_ease }}</p>
+    <p><strong>Exploit Maturity:</strong> {{ signature.exploit_code_maturity }}</p>  
+    <p><strong>Family:</strong> {{ signature.family_name }}</p>
+    <p><strong>Agent:</strong> {{ signature.agent }}</p>
+  </div>
+</div>
+
+<hr>
+<div class="right-aligned">
+  <a href="{% url 'signatures:signature_list' %}" class="btn btn-secondary">Back to List</a>
+</div>
+{% endblock %} {% endcomment %}

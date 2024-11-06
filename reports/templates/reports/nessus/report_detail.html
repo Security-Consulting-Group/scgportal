@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    .status-select {
+        padding: 5px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+    }
+    .status-not_started { background-color: #6c757d; color: white; }
+    .status-in_review { background-color: #ffc107; color: black; }
+    .status-monitoring { background-color: #007bff; color: white; }
+    .status-mitigated { background-color: #17a2b8; color: white; }
+    .status-fixed { background-color: #28a745; color: white; }
+    .status-risk_accepted { background-color: #dc3545; color: white; }
+
+    .accordion-button:not(.collapsed) {
+        background-color: #e7f1ff;
+    }
+    .accordion-body {
+        background-color: #f8f9fa;
+    }
+    .risk-factor-Critical { background-color: #7030A0B3; }
+    .risk-factor-High { background-color: #C00100B3; }
+    .risk-factor-Medium { background-color: #FF9932B3; }
+    .risk-factor-Low { background-color: #FFCC03B3; }
+    .risk-factor-Informational { background-color: #99CC02B3; }
+</style>
+{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+
+<h2 class="main_heading">Report Details</h2>
+<hr>
+{% include 'reports/includes/report_header.html' %}
+
+<h3>Vulnerabilities</h3>
+<div class="accordion" id="vulnerabilitiesAccordion">
+    {% for group in grouped_vulnerabilities %}
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="heading-{{ group.risk_factor }}">
+                <button class="accordion-button collapsed risk-factor-{{ group.risk_factor }}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ group.risk_factor }}" aria-expanded="false" aria-controls="collapse-{{ group.risk_factor }}">
+                    {{ group.risk_factor }} ({{ group.vulnerabilities|length }})
+                </button>
+            </h2>
+            <div id="collapse-{{ group.risk_factor }}" class="accordion-collapse collapse" aria-labelledby="heading-{{ group.risk_factor }}" data-bs-parent="#vulnerabilitiesAccordion">
+                <div class="accordion-body">
+                    {% if perms.reports.change_nessusreport %}
+                    <div class="row align-items-center mb-3">
+                        <div class="col-md-6">
+                            <label for="bulk-action-{{ group.risk_factor }}" class="form-label mb-md-0"><strong>Set the action for all targets under {{ group.risk_factor }} risk category vulnerabilities as:</strong></label>
+                        </div>
+                        <div class="col-md-6">
+                            <select class="form-control bulk-action-select" data-risk-factor="{{ group.risk_factor }}">
+                                <option value="">Select action...</option>
+                                {% for value, label in report.vulnerabilities.first.STATUS_CHOICES %}
+                                    <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    {% endif %}
+                    <div class="accordion" id="innerAccordion-{{ group.risk_factor }}">
+                        {% for vuln in group.vulnerabilities %}
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="innerHeading-{{ group.risk_factor }}-{{ vuln.signature.id }}">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#innerCollapse-{{ group.risk_factor }}-{{ vuln.signature.id }}" aria-expanded="false" aria-controls="innerCollapse-{{ group.risk_factor }}-{{ vuln.signature.id }}">
+                                        {{ vuln.signature.name }}
+                                    </button>
+                                </h2>
+                                <div id="innerCollapse-{{ group.risk_factor }}-{{ vuln.signature.id }}" class="accordion-collapse collapse" aria-labelledby="innerHeading-{{ group.risk_factor }}-{{ vuln.signature.id }}" data-bs-parent="#innerAccordion-{{ group.risk_factor }}">
+                                    <div class="accordion-body">
+                                        <div class="row g-3 mb-3">
+                                            <div class="col-sm-4">
+                                                <p class="mb-sm-0"><strong>ID:</strong> {{ vuln.signature.id }}</p>
+                                            </div>
+                                            <div class="col-sm-4">
+                                                <p class="mb-sm-0"><strong>Rating:</strong> {{ vuln.signature.risk_factor }}</p>
+                                            </div>
+                                            <div class="col-sm-4">
+                                                <p class="mb-sm-0"><strong>CVSS Score:</strong> {{ vuln.signature.cvss_base_score }}</p>
+                                            </div>
+                                        </div>
+                                        <p><strong>Description:</strong> {{ vuln.signature.description | linebreaks }}</p>
+                                        
+                                        {% if vuln.signature.solution %}
+                                            <p><strong>Recommended Solution:</strong> {{ vuln.signature.solution }}</p>
+                                        {% endif %}
+                                        
+                                        {% if vuln.signature.cve %}
+                                        <p><strong>CVE:</strong></p>
+                                        <ul class="list-inline">
+                                        {% for cve in vuln.signature.cve %}
+                                            <li class="list-inline-item">
+                                                <a href="https://nvd.nist.gov/vuln/detail/{{ cve }}" target="_blank" rel="noopener noreferrer">{{ cve }}</a>
+                                            </li>
+                                        {% endfor %}
+                                        </ul>
+                                    {% endif %}
+                                    
+                                    {% if vuln.signature.references %}
+                                        <p><strong>References:</strong></p>
+                                        <ul class="list-inline">
+                                        {% for reference in vuln.signature.references %}
+                                            <li class="list-inline-item">
+                                                <a href="{{ reference }}" target="_blank" rel="noopener noreferrer">{{ reference }}</a>
+                                            </li>
+                                        {% endfor %}
+                                        </ul>
+                                    {% endif %}
+
+                                        <hr>
+                                        <h4>Targets Affected:</h4>
+                                        {% if perms.reports.change_nessusreport %}
+                                        <div class="row align-items-center mb-3">
+                                            <div class="col-md-6">
+                                                <label for="bulk-action-vuln-{{ vuln.signature.id }}" class="form-label mb-md-0"><strong>Set the action for all targets in this Vulnerability as:</strong></label>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <select class="form-select bulk-action-vuln-select" id="bulk-action-vuln-{{ vuln.signature.id }}" data-vulnerability-id="{{ vuln.targets.0.id }}">
+                                                    <option value="">Select action...</option>
+                                                    {% for value, label in vuln.targets.0.STATUS_CHOICES %}
+                                                        <option value="{{ value }}">{{ label }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                        <table class="table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Target Affected</th>
+                                                    <th>Status</th>
+                                                    {% if perms.reports.change_nessusreport %}
+                                                    <th>Last Changed By</th>
+                                                    <th>Last Changed At</th>
+                                                    {% endif %}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for target in vuln.targets %}
+                                                <tr>
+                                                    <td>{{ target.target_affected }}</td>
+                                                    {% if perms.reports.change_nessusreport %}
+                                                    <td>
+                                                        <select class="form-control status-select status-{{ target.status }}" data-vulnerability-id="{{ target.id }}">
+                                                            {% for value, label in target.STATUS_CHOICES %}
+                                                            <option value="{{ value }}" {% if target.status == value %}selected{% endif %}>{{ label }}</option>
+                                                        {% endfor %}
+                                                        </select>
+                                                    </td>
+                                                    <td>{{ target.changed_by|default:"N/A" }}</td>
+                                                    <td>{{ target.changed_at }}</td>
+                                                    {% else %}
+                                                    <td>
+                                                        <span class="status-badge status-{{ target.status }}" data-target-status="{{ target.id }}">
+                                                            {{ target.status|title|cut:"_" }}
+                                                        </span>
+                                                    </td>
+                                                    {% endif %}
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+<hr>
+<div class="right-aligned">
+    <a href="{% url 'reports:report_list' customer_id=report.customer.customer_id service_id=report.service.service_id %}" class="btn btn-secondary">Back to List</a>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'js/status-summary-updater.js' %}"></script>
+<script src="{% static 'js/nessus-status-management.js' %}"></script>
+{% endblock %}

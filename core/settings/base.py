@@ -5,10 +5,17 @@ from django.urls import reverse_lazy
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
+
+# Session settings
+SESSION_COOKIE_AGE = 3600  # 1 hour in seconds
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
 # Default url behaviors
 LOGIN_REDIRECT_URL = 'dashboard:dashboard'
 LOGIN_URL = '/login/'
-LOGOUT_REDIRECT_URL = reverse_lazy('login')
+# LOGOUT_REDIRECT_URL = reverse_lazy('login')
+LOGOUT_REDIRECT_URL = '/login/?timeout=1'
 
 # Application definition
 
@@ -30,13 +37,14 @@ INSTALLED_APPS = [
     # 'jazzmin',
     # My Apps
     'customers',
+    'engagements',
     'contracts',
-    'services',
-    'signatures',
-    'dashboard',
     'payments',
-    'sec_reports',
+    'inventories',
+    'reports',
+    'signatures',
     'users',
+    'dashboard',
     'notifications',
 ]
 
@@ -136,7 +144,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+# TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/New_York'
 
 USE_I18N = True
 

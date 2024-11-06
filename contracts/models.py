@@ -2,7 +2,7 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
 from customers.models import Customer
-from services.models import Service
+from inventories.models import Service
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from decimal import Decimal
@@ -17,7 +17,6 @@ class Contract(models.Model):
         ('CANCELLED', 'Cancelled'),
     ]
 
-    # contract_id = models.CharField(max_length=50, unique=True, editable=False)
     contract_id = models.CharField(max_length=50, primary_key=True, unique=True, editable=False)
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, to_field='customer_id')
     contract_start_date = models.DateField()

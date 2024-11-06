@@ -38,6 +38,9 @@
             <th>Discount</th>
             <th>Subtotal</th>
             <th>Total (After Taxes)</th>
+            {% if perms.contracts.delete_contractservice %}
+            <th>Actions</th>
+            {% endif %}
         </tr>
     </thead>
     <tbody>
@@ -56,6 +59,11 @@
             </td>
             <td>${{ contract_service.discounted_subtotal|floatformat:2 }}</td>
             <td>${{ contract_service.total|floatformat:2 }}</td>
+            {% if perms.contracts.delete_contractservice %}
+            <td>
+                <button class="btn btn-danger btn-sm delete-service" data-service-id="{{ contract_service.id }}">Delete</button>
+            </td>
+            {% endif %}
         </tr>
     {% empty %}
         <tr>
@@ -70,18 +78,19 @@
         <tr>
             <th>Contract Subtotal</th>
             <th>Discount</th>
-            <th>Taxes ({{ contract.taxes|floatformat:2 }}%)</th>
+            <th>Taxes (<span class="contract-taxes">{{ contract.taxes|floatformat:2 }}</span>%)</th>
             <th>Contract Total</th>
             <th>Pending Balance</th>
         </tr>
     </thead>
     <tbody>
         <tr>
-            <td>${{ contract.sub_total|floatformat:2 }}</td>
-            <td>{{ contract.discount|default:"N/A" }}%</td>
-            <td>${{ contract.taxes_amount|floatformat:2 }}</td>
-            <td>${{ contract.total|floatformat:2 }}</td>
-            <td>${{ contract.balance|floatformat:2 }}</td>
+            <td>$<span class="contract-sub-total">{{ contract.sub_total|floatformat:2 }}</span></td>
+            <td><span class="contract-discount">{{ contract.discount|default:"N/A" }}</span>%</td>
+            <td>$<span class="contract-taxes-amount">{{ contract.taxes_amount|floatformat:2 }}</span></td>
+            <td>$<span class="contract-total">{{ contract.total|floatformat:2 }}</span></td>
+            <td>$<span class="contract-balance">{{ contract.balance|floatformat:2 }}</span></td>
+        </tr>
     </tbody>
 </table>
 <hr>
@@ -172,6 +181,70 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error:', error);
         });
     });
+
+    const deleteButtons = document.querySelectorAll('.delete-service');
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const serviceId = this.dataset.serviceId;
+            if (confirm('Are you sure you want to delete this service from the contract?')) {
+                const url = `{% url 'contracts:contract-service-delete' customer_id=contract.customer.customer_id contract_id=contract.contract_id service_id=999999 %}`.replace('999999', serviceId);
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Remove the row from the table
+                        this.closest('tr').remove();
+                        
+                        // Update contract totals
+                        updateContractTotals(data.contract_data);
+                        
+                        // Refresh the page to show the Django message
+                        location.reload();
+                    } else {
+                        console.error('Failed to delete the service');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            }
+        });
+    });
+
+    function updateContractTotals(data) {
+        updateElement('.contract-sub-total', data.sub_total);
+        updateElement('.contract-discount', data.discount, 'N/A');
+        updateElement('.contract-taxes', data.taxes);
+        updateElement('.contract-taxes-amount', data.taxes_amount);
+        updateElement('.contract-total', data.total);
+        updateElement('.contract-balance', data.balance);
+    }
+    
+    function updateElement(selector, value, defaultValue = '0.00') {
+        const element = document.querySelector(selector);
+        if (element) {
+            if (value === null || value === undefined || value === '') {
+                element.textContent = defaultValue;
+            } else if (defaultValue === 'N/A' && value === 'N/A') {
+                element.textContent = 'N/A';
+            } else {
+                element.textContent = parseFloat(value).toFixed(2);
+            }
+        } else {
+            console.warn(`Element with selector "${selector}" not found`);
+        }
+    }
 });
 </script>
 {% endblock %}

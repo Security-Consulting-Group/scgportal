@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<h2>Report Type Details</h2>
+
+<hr>
+
+<div class="row">
+    <div class="col-md-6">
+        <p><strong>Name:</strong> {{ reporttype.name }}</p>
+        <p><strong>Description:</strong> {{ reporttype.description }}</p>
+        <p><strong>Active:</strong> {{ reporttype.is_active }}</p>
+    </div>
+</div>
+
+<hr>
+
+<div class="text-right mt-3">
+    <a href="{% url 'inventories:reporttype_list' %}" class="btn btn-secondary mt-3">Back to Report Type List</a>
+</div>
+
+{% endblock %}
