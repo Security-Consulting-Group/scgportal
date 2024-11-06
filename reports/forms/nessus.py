@@ -12,7 +12,11 @@ class NessusReportUploadForm(forms.Form):
         service = kwargs.pop('service', None)
         super().__init__(*args, **kwargs)
         if customer:
-            self.fields['contract'].queryset = Contract.objects.filter(customer=customer)
+            # Filter by customer and active/trial status
+            self.fields['contract'].queryset = Contract.objects.filter(
+                customer=customer,
+                contract_status__in=['TRIAL', 'ACTIVE']
+            )
         
         if service:
             self.fields['contract'].queryset = self.fields['contract'].queryset.filter(
@@ -23,8 +27,7 @@ class NessusReportUploadForm(forms.Form):
         json_file = self.cleaned_data['json_file']
         try:
             data = json.load(json_file)
-            # Update the required keys to use 'date' instead of 'scan_date'
-            required_keys = ['date', 'inventory', 'alert_report']  # Changed from 'scan_date' to 'date'
+            required_keys = ['date', 'inventory', 'alert_report']
             for key in required_keys:
                 if key not in data:
                     raise forms.ValidationError(f"The JSON file is missing the '{key}' key.")

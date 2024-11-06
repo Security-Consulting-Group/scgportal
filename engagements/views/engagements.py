@@ -1,4 +1,4 @@
-from django.views.generic import ListView, CreateView, UpdateView, DetailView
+from django.views.generic import ListView, CreateView, UpdateView, DetailView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.shortcuts import get_object_or_404
 from django.http import Http404
@@ -7,6 +7,7 @@ from ..models import Engagement
 from ..forms import EngagementForm
 from customers.models import Customer
 from contracts.models import Contract, ContractService
+from django.contrib import messages
 
 class EngagementListView(LoginRequiredMixin, ListView):
     model = Engagement
@@ -177,6 +178,28 @@ class EngagementUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateVi
         return reverse_lazy('engagements:engagement-detail', kwargs={
             'customer_id': self.kwargs['customer_id'],
             'engagement_id': self.object.engagement_id
+        })
+
+class EngagementDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+    model = Engagement
+    template_name = 'engagements/engagement_confirm_delete.html'
+    permission_required = 'engagements.delete_engagement'
+    pk_url_kwarg = 'engagement_id'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['customer'] = self.object.customer
+        context['selected_customer'] = self.object.customer
+        return context
+
+    def delete(self, request, *args, **kwargs):
+        response = super().delete(request, *args, **kwargs)
+        messages.success(request, f"Engagement {self.object.engagement_id} was successfully deleted.")
+        return response
+
+    def get_success_url(self):
+        return reverse_lazy('engagements:engagement-list', kwargs={
+            'customer_id': self.kwargs['customer_id']
         })
         
 class EngagementStatusUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):

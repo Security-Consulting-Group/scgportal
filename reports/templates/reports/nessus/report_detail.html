@@ -30,13 +30,11 @@
 {% endblock %}
 
 {% block content %}
+{% csrf_token %}
+
 <h2 class="main_heading">Report Details</h2>
 <hr>
-<p><strong>Report ID:</strong> {{ report.report_id }}</p>
-<p><strong>Report Name:</strong> {{ report.name }}</p>
-<p><strong>Customer:</strong> {{ report.customer.customer_name }}</p>
-<p><strong>Date:</strong> {{ report.date }}</p>
-<p><strong>Inventory:</strong> {{ report.inventory|join:', ' }}</p>
+{% include 'reports/includes/report_header.html' %}
 
 <h3>Vulnerabilities</h3>
 <div class="accordion" id="vulnerabilitiesAccordion">
@@ -49,6 +47,7 @@
             </h2>
             <div id="collapse-{{ group.risk_factor }}" class="accordion-collapse collapse" aria-labelledby="heading-{{ group.risk_factor }}" data-bs-parent="#vulnerabilitiesAccordion">
                 <div class="accordion-body">
+                    {% if perms.reports.change_nessusreport %}
                     <div class="row align-items-center mb-3">
                         <div class="col-md-6">
                             <label for="bulk-action-{{ group.risk_factor }}" class="form-label mb-md-0"><strong>Set the action for all targets under {{ group.risk_factor }} risk category vulnerabilities as:</strong></label>
@@ -62,6 +61,7 @@
                             </select>
                         </div>
                     </div>
+                    {% endif %}
                     <div class="accordion" id="innerAccordion-{{ group.risk_factor }}">
                         {% for vuln in group.vulnerabilities %}
                             <div class="accordion-item">
@@ -113,6 +113,7 @@
 
                                         <hr>
                                         <h4>Targets Affected:</h4>
+                                        {% if perms.reports.change_nessusreport %}
                                         <div class="row align-items-center mb-3">
                                             <div class="col-md-6">
                                                 <label for="bulk-action-vuln-{{ vuln.signature.id }}" class="form-label mb-md-0"><strong>Set the action for all targets in this Vulnerability as:</strong></label>
@@ -126,19 +127,23 @@
                                                 </select>
                                             </div>
                                         </div>
+                                        {% endif %}
                                         <table class="table">
                                             <thead>
                                                 <tr>
                                                     <th>Target Affected</th>
                                                     <th>Status</th>
+                                                    {% if perms.reports.change_nessusreport %}
                                                     <th>Last Changed By</th>
                                                     <th>Last Changed At</th>
+                                                    {% endif %}
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 {% for target in vuln.targets %}
                                                 <tr>
                                                     <td>{{ target.target_affected }}</td>
+                                                    {% if perms.reports.change_nessusreport %}
                                                     <td>
                                                         <select class="form-control status-select status-{{ target.status }}" data-vulnerability-id="{{ target.id }}">
                                                             {% for value, label in target.STATUS_CHOICES %}
@@ -148,6 +153,13 @@
                                                     </td>
                                                     <td>{{ target.changed_by|default:"N/A" }}</td>
                                                     <td>{{ target.changed_at }}</td>
+                                                    {% else %}
+                                                    <td>
+                                                        <span class="status-badge status-{{ target.status }}" data-target-status="{{ target.id }}">
+                                                            {{ target.status|title|cut:"_" }}
+                                                        </span>
+                                                    </td>
+                                                    {% endif %}
                                                 </tr>
                                                 {% endfor %}
                                             </tbody>
@@ -167,89 +179,7 @@
     <a href="{% url 'reports:report_list' customer_id=report.customer.customer_id service_id=report.service.service_id %}" class="btn btn-secondary">Back to List</a>
 </div>
 {% endblock %}
-
 {% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    function addStatusChangeListener(selector, bulkType) {
-        document.querySelectorAll(selector).forEach(function(select) {
-            select.addEventListener('change', function() {
-                var data = {
-                    status: this.value,
-                    bulk_type: bulkType
-                };
-                if (bulkType === 'risk_factor') {
-                    data.risk_factor = this.closest('.accordion-item').querySelector('.accordion-button').textContent.split('(')[0].trim();
-                } else {
-                    data.vulnerability_id = this.dataset.vulnerabilityId;
-                }
-                updateStatus(data);
-            });
-        });
-    }
-
-    addStatusChangeListener('.status-select', 'individual');
-    addStatusChangeListener('.bulk-action-select', 'risk_factor');
-    addStatusChangeListener('.bulk-action-vuln-select', 'vulnerability');
-
-    function updateStatus(data) {
-        fetch('{% url "reports:report_detail" customer_id=report.customer.customer_id service_id=report.service.service_id pk=report.report_id %}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: new URLSearchParams(data)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                updateUI(data.updated_vulnerabilities);
-            } else {
-                alert('Failed to update status: ' + data.error);
-            }
-        })
-        .catch((error) => {
-            console.error('Error:', error);
-            alert('An error occurred while updating the status');
-        });
-    }
-
-    function updateUI(updatedVulnerabilities) {
-        updatedVulnerabilities.forEach(vuln => {
-            const statusSelect = document.querySelector(`.status-select[data-vulnerability-id="${vuln.id}"]`);
-            if (statusSelect) {
-                statusSelect.value = vuln.status;
-                
-                // Remove all existing status classes
-                statusSelect.classList.remove('status-not_started', 'status-in_review', 'status-monitoring', 'status-mitigated', 'status-fixed', 'status-risk_accepted');
-                
-                // Add the new status class
-                statusSelect.classList.add(`status-${vuln.status}`);
-                
-                const row = statusSelect.closest('tr');
-                if (row) {
-                    const changedByCell = row.querySelector('td:nth-child(3)');
-                    const changedAtCell = row.querySelector('td:nth-child(4)');
-                    if (changedByCell) changedByCell.textContent = vuln.changed_by;
-                    if (changedAtCell) changedAtCell.textContent = formatDate(vuln.changed_at);
-                }
-            }
-        });
-    }
-
-    function formatDate(dateString) {
-        const date = new Date(dateString);
-        return date.toLocaleString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: true
-        });
-    }
-});
-</script>
+<script src="{% static 'js/status-summary-updater.js' %}"></script>
+<script src="{% static 'js/nessus-status-management.js' %}"></script>
 {% endblock %}

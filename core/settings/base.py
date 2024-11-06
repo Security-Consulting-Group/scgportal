@@ -14,7 +14,8 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 # Default url behaviors
 LOGIN_REDIRECT_URL = 'dashboard:dashboard'
 LOGIN_URL = '/login/'
-LOGOUT_REDIRECT_URL = reverse_lazy('login') + '?timeout=1'
+# LOGOUT_REDIRECT_URL = reverse_lazy('login')
+LOGOUT_REDIRECT_URL = '/login/?timeout=1'
 
 # Application definition
 

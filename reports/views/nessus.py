@@ -9,7 +9,7 @@ from .base import ReportListView, ReportDetailView, ReportDeleteView #, ReportUp
 from ..models import NessusReport, NessusVulnerability
 from ..forms.nessus import NessusReportUploadForm
 from signatures.models import NessusSignature
-from contracts.models import Contract
+from ..views.mixins import StatusSummaryMixin
 from inventories.models import Service
 import json
 from django.shortcuts import get_object_or_404
@@ -39,7 +39,7 @@ class NessusReportListView(ReportListView):
         context['service'] = self.service
         return context
 
-class NessusReportDetailView(ReportDetailView):
+class NessusReportDetailView(StatusSummaryMixin, ReportDetailView):
     model = NessusReport
     template_name = 'reports/nessus/report_detail.html'
     context_object_name = 'report'
@@ -59,7 +59,14 @@ class NessusReportDetailView(ReportDetailView):
         context = super().get_context_data(**kwargs)
         vulnerabilities = self.object.vulnerabilities.select_related('signature').all()
 
-
+        status_summary = {}
+        for status_value, status_label in NessusVulnerability.STATUS_CHOICES:
+            count = vulnerabilities.filter(status=status_value).count()
+            if count > 0:  # Only include statuses that have targets
+                status_summary[status_label] = count
+        
+        context['status_summary'] = status_summary
+        
         context['STATUS_CHOICES'] = NessusVulnerability.STATUS_CHOICES
         
         # Fetch the latest change information for each vulnerability

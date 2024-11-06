@@ -3,191 +3,175 @@
 
 {% block extra_css %}
 <style>
-    .accordion-button:not(.collapsed) {
-        background-color: #e7f1ff;
+    .status-select {
+        padding: 5px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
     }
+    .status-not_started { background-color: #6c757d; color: white; }
+    .status-in_review { background-color: #ffc107; color: black; }
+    .status-monitoring { background-color: #007bff; color: white; }
+    .status-mitigated { background-color: #17a2b8; color: white; }
+    .status-fixed { background-color: #28a745; color: white; }
+    .status-risk_accepted { background-color: #dc3545; color: white; }
+
     .accordion-button {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        gap: 10px;
-    }
-    .accordion-button::after {
-        margin-left: 0;
-    }
-    .accordion-body {
-        background-color: #f8f9fa;
+        padding-right: 40px;  /* Space for the collapse arrow */
     }
 
     .instance-title {
         flex-grow: 1;
         text-align: left;
+        margin-right: auto;
     }
 
-    .instance-tags {
+    .severity-tags {
         display: flex;
         gap: 5px;
+        margin-left: auto;
         margin-right: 20px;
     }
 
-    /* Common tag styles */
-    .severity-tag, .confidence-tag {
-        padding: 2px 6px;
+    .badge {
+        display: inline-block;
+        padding: 4px 8px;
+        font-size: 0.75em;
+        font-weight: 600;
         border-radius: 4px;
-        font-size: 0.8em;
-        font-weight: bold;
-        min-width: 60px;
-        text-align: center;
     }
 
-    /* Severity colors */
-    .severity-Critical { background-color: #7030A0B3; color: white; }
-    .severity-High { background-color: #C00100B3; color: white; }
-    .severity-Medium { background-color: #FF9932B3; color: white; }
-    .severity-Low { background-color: #FFCC03B3; color: white; }
-    .severity-Information { background-color: #99CC02B3; color: white; }
+    /* Severity badge colors */
+    .badge-High, .badge-H { background-color: #dc3545; color: white; }
+    .badge-Medium, .badge-M { background-color: #ffc107; color: black; }
+    .badge-Low, .badge-L { background-color: #0dcaf0; color: black; }
+    .badge-Info, .badge-I { background-color: #6c757d; color: white; }
+    .badge-Firm { background-color: #fd7e14; color: white; }
 
-    /* Confidence colors */
-    .confidence-tentative { background-color: yellow; color: black; }
-    .confidence-firm { background-color: orange; color: black; }
-    .confidence-certain { background-color: red; color: white; }
-    .confidence-false_positive { background-color: blue; color: white; }
-
-    .severity-count {
-        display: inline-flex;
-        gap: 5px;
-        margin-left: 15px;
-        align-items: center;
-    }
-
-    .count-tag {
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-size: 0.8em;
-        font-weight: bold;
-        display: inline-flex;
-        align-items: center;
-        gap: 2px;
-    }
-
-    .count-tag-letter {
-        font-weight: bold;
-    }
-
-    .count-tag-number {
-        font-weight: normal;
-    }
-
-    /* Severity colors (use your existing colors) */
-    .count-High { background-color: #C00100B3; color: white; }
-    .count-Medium { background-color: #FF9932B3; color: white; }
-    .count-Low { background-color: #FFCC03B3; color: white; }
-    .count-Information { background-color: #99CC02B3; color: white; }
-
-    .request-data {
-        max-height: 300px;
-        overflow-y: auto;
-        background-color: #f8f9fa;
-        border: 1px solid #dee2e6;
-        padding: 2px;
-        font-family: monospace;
+    /* Fix the position of collapse arrow */
+    .accordion-button::after {
+        margin-left: 10px;
+        position: absolute;
+        right: 15px;
     }
 </style>
 {% endblock %}
 
 {% block content %}
+{% csrf_token %}
 <h2 class="main_heading">BurpSuite Report Details</h2>
 <hr>
-<p><strong>Report ID:</strong> {{ report.report_id }}</p>
-<p><strong>Report Name:</strong> {{ report.name }}</p>
-<p><strong>Customer:</strong> {{ report.customer.customer_name }}</p>
-<p><strong>Date:</strong> {{ report.date }}</p>
+{% include 'reports/includes/report_header.html' %}
 
 <h3>Vulnerabilities</h3>
 <div class="accordion" id="vulnerabilitiesAccordion">
     {% for issue in issues %}
         <div class="accordion-item">
             <h2 class="accordion-header" id="heading-{{ issue.type }}">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ issue.type }}" aria-expanded="false" aria-controls="collapse-{{ issue.type }}">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ issue.type }}" aria-expanded="false">
                     <span class="instance-title">{{ issue.name }} ({{ issue.instances|length }})</span>
-                    <div class="severity-count">
+                    <div class="severity-tags">
                         {% if issue.severity_counts.High > 0 %}
-                            <span class="count-tag count-High">
-                                <span class="count-tag-letter">H</span>:<span class="count-tag-number">{{ issue.severity_counts.High }}</span>
-                            </span>
+                            <span class="badge badge-H">H:{{ issue.severity_counts.High }}</span>
                         {% endif %}
                         {% if issue.severity_counts.Medium > 0 %}
-                            <span class="count-tag count-Medium">
-                                <span class="count-tag-letter">M</span>:<span class="count-tag-number">{{ issue.severity_counts.Medium }}</span>
-                            </span>
+                            <span class="badge badge-M">M:{{ issue.severity_counts.Medium }}</span>
                         {% endif %}
                         {% if issue.severity_counts.Low > 0 %}
-                            <span class="count-tag count-Low">
-                                <span class="count-tag-letter">L</span>:<span class="count-tag-number">{{ issue.severity_counts.Low }}</span>
-                            </span>
+                            <span class="badge badge-L">L:{{ issue.severity_counts.Low }}</span>
                         {% endif %}
                         {% if issue.severity_counts.Information > 0 %}
-                            <span class="count-tag count-Information">
-                                <span class="count-tag-letter">I</span>:<span class="count-tag-number">{{ issue.severity_counts.Information }}</span>
-                            </span>
+                            <span class="badge badge-I">I:{{ issue.severity_counts.Information }}</span>
                         {% endif %}
                     </div>
                 </button>
             </h2>
-            <div id="collapse-{{ issue.type }}" class="accordion-collapse collapse" aria-labelledby="heading-{{ issue.type }}" data-bs-parent="#vulnerabilitiesAccordion">
+
+            <div id="collapse-{{ issue.type }}" class="accordion-collapse collapse" aria-labelledby="heading-{{ issue.type }}">
                 <div class="accordion-body">
-                    <div class="row g-3 mb-3">
-                        <div class="col-sm-4">
-                            <p class="mb-sm-0"><strong>ID:</strong> {{ issue.type }}</p>
-                        </div>
-                        <div class="col-sm-4">
-                            <p class="mb-sm-0"><strong>Host:</strong> {{ issue.host }}</p>
+                    {% if perms.reports.change_burpsuitereport %}
+                    <div class="row align-items-center mb-3">
+                        <div class="col-12">
+                            <label class="form-label">Set status for all instances of this vulnerability:</label>
+                            <select class="form-select bulk-status-update" data-vulnerability-id="{{ issue.instances.0.id }}" data-signature-id="{{ issue.type }}">
+                                <option value="">Select status...</option>
+                                {% for value, label in STATUS_CHOICES %}
+                                    <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
+                    {% endif %}
+                    <p><strong>ID:</strong> {{ issue.type }}</p>
+                    <p><strong>Host:</strong> {{ issue.host }}</p>
 
                     {% if issue.signature.description %}
                     <p><strong>Description:</strong></p>
                     <div class="mb-3">{{ issue.signature.description|safe }}</div>
-                {% endif %}
-                
-                {% if issue.signature.remediation %}
+                    {% endif %}
+
+                    {% if issue.signature.remediation %}
                     <p><strong>Remediation:</strong></p>
                     <div class="mb-3">{{ issue.signature.remediation|safe }}</div>
-                {% endif %}
-                
-                {% if issue.signature.vulnerability_classifications %}
-                    <p><strong>Vulnerability Classifications:</strong></p>
-                    <div class="mb-3">{{ issue.signature.vulnerability_classifications|safe }}</div>
-                {% endif %}
-                
-                {% if issue.signature.references %}
-                    <p><strong>References:</strong></p>
-                    {{ issue.signature.references|safe }}
-                {% endif %}
+                    {% endif %}
 
                     <h4>Instances:</h4>
-                    <div class="accordion" id="instancesAccordion-{{ issue.type }}">
-                        {% for instance in issue.instances %}
+                    {% for instance in issue.instances %}
+                        <div class="accordion" id="instanceAccordion-{{ issue.type }}">
                             <div class="accordion-item">
                                 <h2 class="accordion-header" id="instanceHeading-{{ issue.type }}-{{ forloop.counter }}">
-                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#instanceCollapse-{{ issue.type }}-{{ forloop.counter }}" aria-expanded="false" aria-controls="instanceCollapse-{{ issue.type }}-{{ forloop.counter }}">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#instanceCollapse-{{ issue.type }}-{{ forloop.counter }}">
                                         <span class="instance-title">Instance {{ forloop.counter }}: {{ instance.path }}</span>
                                         <div class="instance-tags">
-                                            <span class="severity-tag severity-{{ instance.severity }}">{{ instance.severity }}</span>
-                                            <span class="confidence-tag confidence-{{ instance.confidence|lower }}">{{ instance.confidence }}</span>
+                                            <span class="badge badge-{{ instance.severity }}">{{ instance.severity }}</span>
+                                            <span class="badge badge-Firm">{{ instance.confidence }}</span>
+                                            <span class="badge status-{{ instance.status }} status-badge">{{ instance.status }}</span>
                                         </div>
                                     </button>
                                 </h2>
-                                <div id="instanceCollapse-{{ issue.type }}-{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="instanceHeading-{{ issue.type }}-{{ forloop.counter }}" data-bs-parent="#instancesAccordion-{{ issue.type }}">
+                                <div id="instanceCollapse-{{ issue.type }}-{{ forloop.counter }}" class="accordion-collapse collapse">
                                     <div class="accordion-body">
+                                        {% if perms.reports.change_burpsuitereport %}
+                                        <div class="row mb-3">
+                                            <div>
+                                                <table class="table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Status</th>
+                                                            <th>Last Changed By</th>
+                                                            <th>Last Changed At</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td>
+                                                                <select class="form-select status-select status-{{ instance.status }}" 
+                                                                        data-vulnerability-id="{{ instance.id }}">
+                                                                    {% for value, label in STATUS_CHOICES %}
+                                                                        <option value="{{ value }}" {% if instance.status == value %}selected{% endif %}>
+                                                                            {{ label }}
+                                                                        </option>
+                                                                    {% endfor %}
+                                                                </select>
+                                                            </td>
+                                                            <td class="changed-by-{{ instance.id }}">{{ instance.changed_by }}</td>
+                                                            <td class="changed-at-{{ instance.id }}">{{ instance.changed_at }}</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        {% endif %}
                                         <p><strong>Path:</strong> {{ instance.path }}</p>
                                         <p><strong>Location:</strong> {{ instance.location }}</p>
+                                        
                                         {% if instance.issueDetail %}
-                                            <div class="mb-3">
-                                                <strong>Issue Detail:</strong>
-                                                <div>{{ instance.issueDetail|safe }}</div>
-                                            </div>
+                                        <p><strong>Issue Detail:</strong></p>
+                                        <div class="mb-3">{{ instance.issueDetail|safe }}</div>
                                         {% endif %}
+                                        
                                         <p><strong>Request Data:</strong></p>
                                         <div class="request-data mb-3">
                                             {% for request in instance.requests %}
@@ -197,13 +181,14 @@
                                     </div>
                                 </div>
                             </div>
-                        {% endfor %}
-                    </div>
+                        </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
     {% endfor %}
 </div>
+
 <hr>
 <div class="right-aligned">
     <a href="{% url 'reports:report_list' customer_id=report.customer.customer_id service_id=report.service.service_id %}" class="btn btn-secondary">Back to List</a>
@@ -211,20 +196,6 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Decode base64 request data
-    document.querySelectorAll('.request-data pre').forEach(function(pre) {
-        var encodedData = pre.textContent.trim();
-        if (encodedData) {
-            try {
-                var decodedData = atob(encodedData);
-                pre.textContent = decodedData;
-            } catch (e) {
-                console.error("Error decoding base64:", e);
-            }
-        }
-    });
-});
-</script>
+<script src="{% static 'js/status-summary-updater.js' %}"></script>
+<script src="{% static 'js/burpsuite-status-management.js' %}"></script>
 {% endblock %}

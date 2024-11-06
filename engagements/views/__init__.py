@@ -4,11 +4,13 @@ from .engagements import (
     EngagementCreateView,
     EngagementDetailView,
     EngagementUpdateView,
+    EngagementDeleteView,
     EngagementStatusUpdateView
 )
 from .time_entries import (
     TimeEntryCreateView,
-    TimeEntryUpdateView
+    TimeEntryUpdateView,
+    TimeEntryDeleteView
 )
 
 __all__ = [
@@ -16,7 +18,9 @@ __all__ = [
     'EngagementCreateView',
     'EngagementDetailView',
     'EngagementUpdateView',
+    'EngagementDeleteView',
     'EngagementStatusUpdateView',
     'TimeEntryCreateView',
     'TimeEntryUpdateView',
+    'TimeEntryDeleteView',
 ]

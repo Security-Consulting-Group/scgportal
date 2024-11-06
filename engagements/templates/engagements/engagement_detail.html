@@ -4,8 +4,6 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>{{ engagement.engagement_id }} - {{ engagement.name }}</h2>
-    <a href="{% url 'engagements:engagement-update' customer_id=customer.customer_id engagement_id=engagement.engagement_id %}" 
-    class="btn btn-primary">Edit</a>
 </div>
 <hr>
 
@@ -17,7 +15,9 @@
                 <div class="row">
                     <dt class="col-sm-3">Status</dt>
                     <dd class="col-sm-3">{{ engagement.get_status_display }}</dd>
+                    {% if perms.engagements.change_engagement %}
                     <dd class="col-sm-6"><button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#statusChangeModal"> Change Status </button></dd>
+                    {% endif %}
                 </div>
                 <div class="row">
                     <dt class="col-sm-3">Priority</dt>
@@ -27,8 +27,8 @@
                         </span>
                     </dd>
 
-                    {% comment %} <dt class="col-sm-3">Service</dt>
-                    <dd class="col-sm-9">{{ engagement.contract_service }}</dd> {% endcomment %}
+                     <dt class="col-sm-3">Service</dt>
+                    <dd class="col-sm-9">{{ engagement.contract_service }}</dd>
 
                     <dt class="col-sm-3">Created</dt>
                     <dd class="col-sm-9">{{ engagement.created_at|date:"M d, Y H:i" }}</dd>
@@ -67,7 +67,9 @@
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="card-title mb-0">Time Entries</h5>
+                {% if perms.engagements.add_timeentry %}
                 <a href="{% url 'engagements:time-entry-create' customer_id=customer.customer_id engagement_id=engagement.engagement_id %}" class="btn btn-primary">Add Time Entry</a>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -75,10 +77,26 @@
     <div class="col-lg-8">
         <div class="card mb-3">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <small class="text-muted">{{ entry.date|date:"M d, Y" }}</small>
-                    <small class="text-muted">{{ entry.created_by.get_full_name}}</small>
-                    <span class="badge bg-secondary">{{ entry.hours_spent }} hrs</span>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <small class="text-muted">{{ entry.date|date:"M d, Y" }}</small>
+                        <small class="text-muted">{{ entry.created_by.get_full_name }}</small>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-secondary">{{ entry.hours_spent }} hrs</span>
+                        {% if perms.engagements.change_timeentry %}
+                            <a href="{% url 'engagements:time-entry-update' customer_id=customer.customer_id engagement_id=engagement.engagement_id pk=entry.pk %}" 
+                               class="btn btn-sm btn-outline-primary">
+                                Edit
+                            </a>
+                        {% endif %}
+                        {% if perms.engagements.delete_timeentry %}
+                            <a href="{% url 'engagements:time-entry-delete' customer_id=customer.customer_id engagement_id=engagement.engagement_id pk=entry.pk %}" 
+                           class="btn btn-sm btn-outline-danger">
+                            Delete
+                            </a>
+                        {% endif %}
+                    </div>
                 </div>
                 <p class="mt-2 mb-1">{{ entry.client_comment|linebreaks }}</p>
             </div>
@@ -99,7 +117,7 @@
     <p class="text-muted my-4">No time entries yet</p>
     {% endfor %}
 </div>
-
+{% if perms.engagements.change_engagement %}
 <!-- Status Change Modal -->
 <div class="modal fade" id="statusChangeModal" tabindex="-1">
 <div class="modal-dialog">
@@ -129,6 +147,7 @@
         </form>
     </div>
 </div>
+{% endif %}
 {% endblock %}
 {% block extra_js %}
 <script>

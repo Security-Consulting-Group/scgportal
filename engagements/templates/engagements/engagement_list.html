@@ -74,7 +74,9 @@
             <th>Severity</th>
             <th>Contract</th>
             <th>Hours U/T</th>
-
+            {% if perms.engagements.change_engagement or perms.engagements.delete_engagement %}
+            <th>Actions</th>
+            {% endif %}
         </tr>
     </thead>
     <tbody>
@@ -85,8 +87,30 @@
             <td>{{ engagement.created_at }}</td>
             <td>{{ engagement.get_status_display }}</td>
             <td><span class="{{ engagement.priority_label }}">{{ engagement.get_priority_display }}</span></td>
-            <td>{{ engagement.contract_service }}</td>
-            <td>{{ engagement.engagement_hours|default:"0" }}/{{ engagement.contract_service.quantity }}</td>
+            <td>
+                <a href="{% url 'contracts:contract-detail' customer_id=customer.customer_id contract_id=engagement.contract.contract_id %}">
+                    {{ engagement.contract.contract_id }}
+                </a>
+            </td>
+            {% comment %} <td>{{ engagement.engagement_hours|default:"0" }} / <strong>{{ engagement.contract_service.quantity }}</strong></td> {% endcomment %}
+            <td>{{ engagement.engagement_hours|default:"0.00" }} / <strong>{{ engagement.contract_service.quantity|floatformat:2 }}</strong></td>
+
+            <td>
+                <div class="d-flex gap-2">
+                    {% if perms.engagements.change_engagement %}
+                        <a href="{% url 'engagements:engagement-update' customer_id=customer.customer_id engagement_id=engagement.engagement_id %}"
+                           class="btn btn-sm btn-outline-primary">
+                           Edit
+                        </a>
+                    {% endif %}
+                    {% if perms.engagements.delete_engagement %}
+                        <a href="{% url 'engagements:engagement-delete' customer_id=customer.customer_id engagement_id=engagement.engagement_id %}"
+                           class="btn btn-sm btn-outline-danger">
+                           Delete
+                        </a>
+                    {% endif %}
+                </div>
+            </td>
         </tr>
         {% empty %}
         <tr>

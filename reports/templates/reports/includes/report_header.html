@@ -1,0 +1,55 @@
+<style>
+    .status-not_started { background-color: #6c757d; color: white; }
+    .status-in_review { background-color: #ffc107; color: black; }
+    .status-monitoring { background-color: #007bff; color: white; }
+    .status-mitigated { background-color: #17a2b8; color: white; }
+    .status-fixed { background-color: #28a745; color: white; }
+    .status-risk_accepted { background-color: #dc3545; color: white; }
+
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        display: inline-block;
+    }
+</style>
+
+<div class="row align-items-start">
+    <div class="col-md-6">
+        <div class="report-info">
+            <p><strong>Report ID:</strong> {{ report.report_id }}</p>
+            <p><strong>Report Name:</strong> {{ report.name }}</p>
+            <p><strong>Customer:</strong> {{ report.customer.customer_name }}</p>
+            <p><strong>Date:</strong> {{ report.date }}</p>
+            {% if report.inventory %}
+                <p><strong>Inventory:</strong> {{ report.inventory|join:', ' }}</p>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-md-6">
+        {% if status_summary %}
+        <div class="card">
+            <div class="card-body">
+                <table class="table table-sm mb-0 status-summary">
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th class="text-end">Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for status_key, status_data in status_summary.items %}
+                            <tr data-status="{{ status_key }}">
+                                <td>
+                                    <span class="status-{{ status_key }} status-badge">{{ status_data.label }}</span>
+                                </td>
+                                <td class="text-end status-summary-count" data-status="{{ status_key }}">{{ status_data.count }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+<hr>

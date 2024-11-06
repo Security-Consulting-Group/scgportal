@@ -13,32 +13,21 @@
     </div>
 </form>
 {% endblock %}
-
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const contractSelect = document.getElementById('id_contract');
-        const serviceSelect = document.getElementById('id_service');
 
-        contractSelect.addEventListener('change', function() {
-            const contractId = this.value;
-            if (contractId) {
-                fetch(`{% url 'reports:report_upload' customer_id=request.selected_customer.customer_id service_id=service.service_id %}?contract_id=${contractId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        serviceSelect.innerHTML = '<option value="">---------</option>';
-                        data.services.forEach(service => {
-                            const option = document.createElement('option');
-                            option.value = service.id;
-                            option.textContent = service.service_name;
-                            serviceSelect.appendChild(option);
-                        });
-                        serviceSelect.disabled = false;
-                    })
-                    .catch(error => console.error('Error:', error));
-            } else {
-                serviceSelect.innerHTML = '<option value="">---------</option>';
-                serviceSelect.disabled = true;
+        // Keep only file validation
+        const fileInput = document.querySelector('input[type="file"]');
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (!file.name.toLowerCase().endsWith('.json')) {
+                alert('Please select a JSON file');
+                fileInput.value = '';
+                return;
             }
         });
     });

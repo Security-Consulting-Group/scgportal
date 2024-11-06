@@ -1,10 +1,11 @@
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
 {% block content %}
-<h2>{% if form.instance.pk %}Edit{% else %}Create{% endif %} Contract</h2>
-<hr>
-
 <form method="post">
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>{% if form.instance.pk %}Edit{% else %}Create{% endif %} Contract</h2>
+</div>
+<hr>
     {% csrf_token %}
     <div class="row">
         <div class="col-md-4">
@@ -27,6 +28,7 @@
             {{ form.contract_notes|as_crispy_field }}
         </div>
     </div>
+    {% if perms.contracts.change_contractservice %}
     <h3>Services</h3>
     {{ services.management_form }}
     <div id="service-forms">
@@ -47,7 +49,10 @@
             </div>
         {% endfor %}
     </div>
+    {% endif %}
+    {% if perms.contracts.add_contractservice %}
     <button type="button" id="add-service" class="btn btn-secondary">Add Service</button>
+    {% endif %}
     <hr>
     <div class="right-aligned mt-3">
         <button type="submit" class="btn btn-primary">Save</button>

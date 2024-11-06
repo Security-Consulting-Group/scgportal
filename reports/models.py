@@ -57,6 +57,18 @@ class BurpSuiteVulnerability(models.Model):
     confidence = models.CharField(max_length=50)
     issueDetail = models.TextField(default='N/A', null=False)
     request = models.TextField()
+    STATUS_CHOICES = [
+        ('not_started', 'Not Started'),
+        ('in_review', 'In Review'),
+        ('monitoring', 'Monitoring'),
+        ('mitigated', 'Mitigated'),
+        ('fixed', 'Fixed'),
+        ('risk_accepted', 'Risk Accepted'),
+        ('not_applicable', 'Not Applicable'),
+    ]
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='not_started')
+    changed_at = models.DateTimeField(auto_now=True)
+    changed_by = models.ForeignKey(get_user_model(), on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return f"{self.signature} - {self.host} - {self.severity}"

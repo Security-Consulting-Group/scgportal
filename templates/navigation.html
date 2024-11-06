@@ -31,18 +31,22 @@
                         {% if perms.contracts.view_contract %}
                             <li class="nav-item"><a class="nav-link" href="{% url 'contracts:contract-list' customer_id=selected_customer.customer_id %}">Contracts</a></li>
                         {% endif %}
-                        {% if perms.reports.view_securityreport %}
+                        {% if perms.reports.view_burpsuitereport or perms.reports.view_nessusreport or perms.reports.view_supportreport %}
                             <li class="nav-item"><a class="nav-link" href="{% url 'reports:report_selection' customer_id=selected_customer.customer_id %}">Reports</a></li>
                         {% endif %}
                         {% if perms.engagements.view_engagement %}
                             <li class="nav-item"><a class="nav-link" href="{% url 'engagements:engagement-list' customer_id=selected_customer.customer_id %}">Engagements</a></li>
                         {% endif %}
-                        {% if perms.users.add_customuser or perms.users.add_customer_user %}
+                        {% if perms.users.view_customuser %}
                             <li class="nav-item"><a class="nav-link" href="{% url 'users:user-list' customer_id=selected_customer.customer_id %}">Users</a></li>
                         {% endif %}
                     {% elif user.type == 'staff' %}
+                        {% if perms.inventories.view_service or perms.inventories.view_reporttype %}
                         <li class="nav-item"><a class="nav-link" href="{% url 'inventories:inventory_selection' %}">Inventories</a></li>
+                        {% endif %}
+                        {% if perms.signatures.view_burpsuitesignature or perms.signatures.view_nessussignature %}
                         <li class="nav-item"><a class="nav-link" href="{% url 'signatures:signature_selection' %}">Signatures</a></li>
+                        {% endif %}
                     {% endif %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">

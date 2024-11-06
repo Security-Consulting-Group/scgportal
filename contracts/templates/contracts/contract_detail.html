@@ -38,7 +38,9 @@
             <th>Discount</th>
             <th>Subtotal</th>
             <th>Total (After Taxes)</th>
+            {% if perms.contracts.delete_contractservice %}
             <th>Actions</th>
+            {% endif %}
         </tr>
     </thead>
     <tbody>
@@ -57,11 +59,11 @@
             </td>
             <td>${{ contract_service.discounted_subtotal|floatformat:2 }}</td>
             <td>${{ contract_service.total|floatformat:2 }}</td>
+            {% if perms.contracts.delete_contractservice %}
             <td>
-                {% if perms.contracts.delete_contractservice %}
-                    <button class="btn btn-danger btn-sm delete-service" data-service-id="{{ contract_service.id }}">Delete</button>
-                {% endif %}
+                <button class="btn btn-danger btn-sm delete-service" data-service-id="{{ contract_service.id }}">Delete</button>
             </td>
+            {% endif %}
         </tr>
     {% empty %}
         <tr>

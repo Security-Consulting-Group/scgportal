@@ -9,7 +9,11 @@ from ..models import BurpSuiteReport, BurpSuiteVulnerability
 from ..forms.burpsuite import BurpSuiteReportUploadForm
 from signatures.models import BurpSuiteSignature
 from inventories.models import Service
+from ..views.mixins import StatusSummaryMixin
 import json
+from django.utils.decorators import method_decorator
+from django.views.decorators.http import require_POST
+from django.http import JsonResponse
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 
@@ -31,25 +35,25 @@ class BurpSuiteReportListView(ReportListView):
         context['service'] = self.service
         return context
 
-class BurpSuiteReportDetailView(ReportDetailView):
+class BurpSuiteReportDetailView(StatusSummaryMixin, ReportDetailView):
     model = BurpSuiteReport
     template_name = 'reports/burpsuite/report_detail.html'
-    context_object_name = 'report'
     permission_required = 'reports.view_burpsuitereport'
     
-    def get_object(self, queryset=None):
-        if queryset is None:
-            queryset = self.get_queryset()
-        return get_object_or_404(
-            queryset,
-            pk=self.kwargs['pk'],
-            customer=self.request.selected_customer,
-            service__service_id=self.kwargs['service_id']
-        )
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         vulnerabilities = self.object.vulnerabilities.select_related('signature').all()
+            
+        status_summary = {}
+        for status_value, status_label in BurpSuiteVulnerability.STATUS_CHOICES:
+            count = vulnerabilities.filter(status=status_value).count()
+            if count > 0:  # Only include statuses that have instances
+                status_summary[status_label] = count
+        
+        context['status_summary'] = status_summary
+        
+        # Add STATUS_CHOICES to context
+        context['STATUS_CHOICES'] = BurpSuiteVulnerability.STATUS_CHOICES
         
         grouped_vulnerabilities = {}
         for vuln in vulnerabilities:
@@ -66,29 +70,92 @@ class BurpSuiteReportDetailView(ReportDetailView):
                         'vulnerability_classifications': vuln.signature.vulnerability_classifications
                     },
                     'instances': [],
-                    'severity_counts': {'High': 0, 'Medium': 0, 'Low': 0, 'Information': 0}  # Initialize counts
+                    'severity_counts': {'High': 0, 'Medium': 0, 'Low': 0, 'Information': 0}
                 }
             
             instance_data = {
+                'id': vuln.id,  # Add this
                 'path': vuln.path,
                 'location': vuln.location,
                 'severity': vuln.severity,
                 'confidence': vuln.confidence,
                 'issueDetail': vuln.issueDetail,
-                'requests': json.loads(vuln.request)
+                'requests': json.loads(vuln.request),
+                'status': vuln.status,  # Add this
+                'changed_by': vuln.changed_by.email if vuln.changed_by else 'N/A',  # Add this
+                'changed_at': timezone.localtime(vuln.changed_at).strftime('%b %d, %Y, %I:%M:%S %p') if vuln.changed_at else 'N/A',  # Add this
             }
             grouped_vulnerabilities[signature_id]['instances'].append(instance_data)
-            # Increment the severity counter
             grouped_vulnerabilities[signature_id]['severity_counts'][vuln.severity] += 1
         
         context['issues'] = list(grouped_vulnerabilities.values())
         return context
 
+    @method_decorator(require_POST)
+    def post(self, request, *args, **kwargs):
+        return self.update_vulnerability_status(request, *args, **kwargs)
+
+    def update_vulnerability_status(self, request, *args, **kwargs):
+        vulnerability_id = request.POST.get('vulnerability_id')
+        new_status = request.POST.get('status')
+        bulk_type = request.POST.get('bulk_type')
+        severity = request.POST.get('severity')
+
+        try:
+            with transaction.atomic():
+                report = self.get_object()
+                updated_vulnerabilities = []
+
+                if bulk_type == 'signature':
+                    vulnerabilities = BurpSuiteVulnerability.objects.filter(
+                        report=report,
+                        signature_id=BurpSuiteVulnerability.objects.get(id=vulnerability_id).signature_id
+                    )
+                elif bulk_type == 'severity':
+                    vulnerabilities = BurpSuiteVulnerability.objects.filter(
+                        report=report,
+                        severity=severity
+                    )
+                else:
+                    vulnerabilities = BurpSuiteVulnerability.objects.filter(id=vulnerability_id, report=report)
+
+                for vulnerability in vulnerabilities:
+                    if vulnerability.status != new_status:
+                        vulnerability.status = new_status
+                        vulnerability.changed_by = request.user
+                        vulnerability.save()
+
+                        updated_vulnerabilities.append({
+                            'id': vulnerability.id,
+                            'status': new_status,
+                            'changed_by': request.user.email,
+                            'changed_at': timezone.localtime(vulnerability.changed_at).strftime('%b %d, %Y, %I:%M:%S %p')
+                        })
+
+                return JsonResponse({
+                    'success': True, 
+                    'new_status': dict(BurpSuiteVulnerability.STATUS_CHOICES)[new_status],
+                    'updated_count': len(updated_vulnerabilities),
+                    'updated_vulnerabilities': updated_vulnerabilities,
+                })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 class BurpSuiteReportUploadView(ReportBaseView, FormView):
     form_class = BurpSuiteReportUploadForm
     template_name = 'reports/report_upload.html'
     permission_required = 'reports.add_burpsuitereport'
+
+    def get(self, request, *args, **kwargs):
+        # Handle AJAX request for services
+        if 'contract_id' in request.GET:
+            service = get_object_or_404(Service, service_id=self.kwargs['service_id'])
+            services_data = [
+                {'id': service.service_id, 'service_name': str(service)}
+            ]
+            return JsonResponse({'services': services_data})
+            
+        return super().get(request, *args, **kwargs)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()

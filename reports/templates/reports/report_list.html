@@ -14,7 +14,7 @@
     <table class="table">
         <thead>
             <tr>
-                <th>Contract ID</th>
+                <th>Contract</th>
                 <th>Hours Contracted</th>
                 <th>Hours Used</th>
                 <th>Hours Remaining</th>
@@ -62,7 +62,9 @@
                 <th>Name</th>
                 <th>Contract</th>
                 <th>Date</th>
+                {% if perms.reports.delete_nessusreport or perms.reports.delete_burpsuitereport %}
                 <th>Actions</th>
+                {% endif %}
             </tr>
         </thead>
         <tbody>
@@ -72,15 +74,21 @@
                         <a href="{% url 'reports:report_detail' customer_id=report.customer.customer_id service_id=service.service_id pk=report.report_id %}">{{ report.report_id }}</a>
                     </td>
                     <td>{{ report.name }}</td>
-                    <td>{% if report.contract %}{{ report.contract.contract_id }}{% else %}N/A{% endif %}</td>
-                    <td>{% if is_support_report %}{{ report.created_at|date:"Y-m-d" }}{% else %}{{ report.date }}{% endif %}</td>
                     <td>
-                        {% if not is_support_report %}
-                            {% if perms.reports.delete_nessusreport or perms.reports.delete_burpsuitereport %}
-                                <a href="{% url 'reports:report_delete' customer_id=report.customer.customer_id service_id=service.service_id pk=report.report_id %}" class="btn btn-danger btn-sm">Delete</a>
-                            {% endif %}
+                        {% if report.contract %}
+                            <a href="{% url 'contracts:contract-detail' customer_id=report.customer.customer_id contract_id=report.contract.contract_id %}">
+                                {{ report.contract.contract_id }}
+                            </a>
+                        {% else %}
+                            N/A
                         {% endif %}
                     </td>
+                    <td>{% if is_support_report %}{{ report.created_at|date:"Y-m-d" }}{% else %}{{ report.date }}{% endif %}</td>
+                    {% if perms.reports.delete_nessusreport or perms.reports.delete_burpsuitereport %}
+                    <td>
+                        <a href="{% url 'reports:report_delete' customer_id=report.customer.customer_id service_id=service.service_id pk=report.report_id %}" class="btn btn-danger btn-sm">Delete</a>
+                    </td>
+                    {% endif %}
                 </tr>
             {% empty %}
                 <tr>

@@ -12,9 +12,14 @@ class BurpSuiteReportUploadForm(forms.Form):
         service = kwargs.pop('service', None)
         super().__init__(*args, **kwargs)
         if customer:
-            self.fields['contract'].queryset = Contract.objects.filter(customer=customer)
+            # Filter by customer and status
+            self.fields['contract'].queryset = Contract.objects.filter(
+                customer=customer,
+                contract_status__in=['TRIAL', 'ACTIVE']
+            )
         
         if service:
+            # Further filter by service while maintaining status filter
             self.fields['contract'].queryset = self.fields['contract'].queryset.filter(
                 contractservice__service=service
             ).distinct()
