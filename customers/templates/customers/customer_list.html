@@ -3,11 +3,13 @@
 {% load dashboard_tags %}
 
 {% block content %}
-<h2>Accounts</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Accounts</h2>
+    {% if perms.customers.add_customer %}
+    <a href="{% url 'customers:customer-create' %}" class="btn btn-primary">Add New Account</a>
+    {% endif %}
+</div>
 <hr>
-{% if perms.customers.add_customer %}
-<a href="{% url 'customers:customer-create' %}" class="btn btn-primary mb-3">Add New Account</a>
-{% endif %}
 <table class="table">
     <thead>
         <tr>

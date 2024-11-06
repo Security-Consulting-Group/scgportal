@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Report Selection</h2>
+<hr>
+
+{% if services_by_type %}
+    {% for report_type, services in services_by_type.items %}
+        <div class="row mb-4">
+            {% for service in services %}
+                <div class="col-md-6 mb-3">
+                    <a href="{% url 'reports:report_list' customer_id=request.selected_customer.customer_id service_id=service.service_id %}" class="text-decoration-none card-link">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title">{{ service.service_name }}</h5>
+                                <p class="card-text">{{ service.service_description }}</p>
+                                <p class="card-text mt-auto">
+                                    {% if service.report_type.name|lower != 'support' %}
+                                    <strong>Reports: {{ service.report_count }}</strong>
+                                    {% if service.report_count == 0 %}
+                                        <br><small class="text-muted">No reports yet. Click to upload.</small>
+                                    {% endif %}
+                                {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+    {% endfor %}
+{% else %}
+    <div class="alert alert-info" role="alert">
+        No report services are currently available for your active contracts. Please contact support if you believe this is an error.
+    </div>
+{% endif %}
+
+<style>
+    .card-link .card {
+        transition: transform 0.3s, box-shadow 0.3s, background-color 0.3s;
+    }
+    
+    .card-link:hover .card {
+        background-color: #f8f9fa;
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    }
+</style>
+{% endblock %}

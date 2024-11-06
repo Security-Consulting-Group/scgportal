@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Engagement Support Report - {{ contract.contract_id }} </h2>
+    <a href="{% url 'reports:report_list' customer_id=customer.customer_id service_id=service.service_id %}" class="btn btn-secondary">Back</a>
+</div>
+<hr>
+<!-- Time Usage Histogram -->
+<h3>Time Usage Distribution</h3>
+<div style="height: 300px;">
+    <canvas id="timeUsageChart"></canvas>
+</div>
+<hr>
+<h3>Engagements</h3>
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th>
+                <a href="?sort={% if sort_by == 'engagement_id' %}-{% endif %}engagement_id">
+                    ID {% if sort_by == 'engagement_id' %}↑{% elif sort_by == '-engagement_id' %}↓{% endif %}
+                </a>
+            </th>
+            <th>
+                <a href="?sort={% if sort_by == 'name' %}-{% endif %}name">
+                    Title {% if sort_by == 'name' %}↑{% elif sort_by == '-name' %}↓{% endif %}
+                </a>
+            </th>
+            <th>
+                <a href="?sort={% if sort_by == 'created_at' %}-{% endif %}created_at">
+                    Created {% if sort_by == 'created_at' %}↑{% elif sort_by == '-created_at' %}↓{% endif %}
+                </a>
+            </th>
+            <th>
+                <a href="?sort={% if sort_by == 'status' %}-{% endif %}status">
+                    Status {% if sort_by == 'status' %}↑{% elif sort_by == '-status' %}↓{% endif %}
+                </a>
+            </th>
+            <th>
+                <a href="?sort={% if sort_by == 'priority' %}-{% endif %}priority">
+                    Priority {% if sort_by == 'priority' %}↑{% elif sort_by == '-priority' %}↓{% endif %}
+                </a>
+            </th>
+            <th>
+                <a href="?sort={% if sort_by == 'hours_used' %}-{% endif %}hours_used">
+                    Hours Used {% if sort_by == 'hours_used' %}↓{% elif sort_by == '-hours_used' %}↑{% endif %}
+                </a>
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for engagement in engagements %}
+        <tr>
+            <td>
+                <a href="{% url 'engagements:engagement-detail' customer_id=customer.customer_id engagement_id=engagement.engagement_id %}">
+                    {{ engagement.engagement_id }}
+                </a>
+            </td>
+            <td>{{ engagement.name }}</td>
+            <td>{{ engagement.created_at|date:"Y-m-d H:i" }}</td>
+            <td>{{ engagement.get_status_display }}</td>
+            <td><span class="{{ engagement.priority_label }}">{{ engagement.get_priority_display }}</span></td>
+            <td>
+                <div class="d-flex align-items-center">
+                    <div class="progress flex-grow-1" style="height: 20px;">
+                        <div class="progress-bar" role="progressbar" 
+                                style="width: {% widthratio engagement.engagement_hours engagement.contract_service.quantity 100 %}%"
+                                aria-valuenow="{{ engagement.engagement_hours }}" 
+                                aria-valuemin="0" 
+                                aria-valuemax="{{ engagement.contract_service.quantity }}">
+                        </div>
+                    </div>
+                    <span class="ms-2">{{ engagement.engagement_hours }}h</span>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const timeData = {{ time_entries_by_date|safe }};
+    
+    const ctx = document.getElementById('timeUsageChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: timeData.map(entry => entry.date_only),
+            datasets: [{
+                label: 'Hours Used',
+                data: timeData.map(entry => entry.total_hours),
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Hours'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    }
+                }
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Time Usage by Date'
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

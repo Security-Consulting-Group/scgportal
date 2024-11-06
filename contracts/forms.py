@@ -5,7 +5,7 @@ class ContractForm(forms.ModelForm):
     class Meta:
         model = Contract
         exclude = ['customer', 'contract_id']
-        fields = ['contract_start_date', 'contract_end_date', 'contract_status', 'discount', 'taxes', 'contract_notes']
+        fields = ['contract_start_date', 'contract_end_date', 'discount', 'taxes', 'contract_notes']
         widgets = {
             'contract_start_date': forms.DateInput(attrs={'type': 'date'}),
             'contract_end_date': forms.DateInput(attrs={'type': 'date'}),
@@ -13,11 +13,22 @@ class ContractForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
-        is_update = kwargs.pop('is_update', False)
+        self.is_update = kwargs.pop('is_update', False)
         super().__init__(*args, **kwargs)
         
-        if not is_update:
+        # Remove contract_status field from the form
+        if 'contract_status' in self.fields:
             del self.fields['contract_status']
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self.is_update and self.instance.pk:
+            # Preserve the existing contract_status for updates
+            original_instance = Contract.objects.get(pk=self.instance.pk)
+            instance.contract_status = original_instance.contract_status
+        if commit:
+            instance.save()
+        return instance
 
 class ServiceQuantityForm(forms.ModelForm):
     quantity = forms.IntegerField(min_value=1, initial=1)

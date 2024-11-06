@@ -1,22 +1,43 @@
 from django import forms
-from .models import Signature
+from .models import NessusSignature, BurpSuiteSignature
 
-class SignatureForm(forms.ModelForm):
+class NessusSignatureForm(forms.ModelForm):
     class Meta:
-        model = Signature
-        fields = ['id', 'plugin_name', 'description']
+        model = NessusSignature
+        fields = ['id', 'name', 'description', 'risk_factor', 'solution', 'cvss_base_score']
         widgets = {
             'id': forms.NumberInput(attrs={'class': 'form-control'}),
-            'plugin_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'risk_factor': forms.Select(choices=[('Low', 'Low'), ('Medium', 'Medium'), ('High', 'High'), ('Critical', 'Critical')], attrs={'class': 'form-control'}),
-            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 10}),
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
+            'risk_factor': forms.Select(attrs={'class': 'form-control'}),
+            'solution': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
+            'cvss_base_score': forms.NumberInput(attrs={'class': 'form-control'}),
         }
 
     def clean_id(self):
         plugin_id = self.cleaned_data.get('id')
         if plugin_id <= 0:
-            raise forms.ValidationError("Plugin ID must be a positive integer.")
+            raise forms.ValidationError("Signature ID must be a positive integer.")
         return plugin_id
+
+class BurpSuiteSignatureForm(forms.ModelForm):
+    class Meta:
+        model = BurpSuiteSignature
+        fields = ['id', 'name', 'description', 'remediation', 'vulnerability_classifications', 'retired']
+        widgets = {
+            'id': forms.NumberInput(attrs={'class': 'form-control'}),
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
+            'remediation': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
+            'vulnerability_classifications': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'retired': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+    def clean_id(self):
+        signature_id = self.cleaned_data.get('id')
+        if signature_id <= 0:
+            raise forms.ValidationError("Signature ID must be a positive integer.")
+        return signature_id
 
 class SignatureUploadForm(forms.Form):
     json_file = forms.FileField(
@@ -24,6 +45,6 @@ class SignatureUploadForm(forms.Form):
         widget=forms.FileInput(attrs={'class': 'form-control'})
     )
     scanner_type = forms.ChoiceField(
-        choices=Signature.SCANNER_CHOICES,
+        choices=[('Nessus', 'Nessus'), ('BurpSuite', 'Burp Suite')],
         widget=forms.Select(attrs={'class': 'form-control'})
     )

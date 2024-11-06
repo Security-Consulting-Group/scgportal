@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Signature Management</h2>
+<hr>
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <a href="{% url 'signatures:signature_list' scanner_type='nessus' %}" class="text-decoration-none card-link">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">Nessus Signatures</h5>
+                    <p class="card-text">View and manage Nessus <strong>Vulnerability</strong> signatures</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-6 mb-4">
+        <a href="{% url 'signatures:signature_list' scanner_type='burpsuite' %}" class="text-decoration-none card-link">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">Burp Suite Signatures</h5>
+                    <p class="card-text">View and manage Burp Suite <strong>Pentest</strong> signatures</p>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<style>
+    .card-link .card {
+        transition: transform 0.3s, box-shadow 0.3s, background-color 0.3s;
+    }
+    
+    .card-link:hover .card {
+        background-color: #f8f9fa;
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    }
+</style>
+{% endblock %}
