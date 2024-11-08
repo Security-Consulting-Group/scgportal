@@ -16,6 +16,9 @@ class ServiceListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     template_name = 'inventories/services/service_list.html'
     context_object_name = 'services'
     permission_required = 'inventories.view_service'
+    
+    def get_queryset(self):
+        return Service.objects.all().order_by('service_id')
 
 class ServiceDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
     model = Service
