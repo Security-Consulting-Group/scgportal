@@ -7,9 +7,12 @@ class ServiceForm(forms.ModelForm):
         fields = ['service_id', 'service_name', 'service_description', 'service_price', 'is_active', 'report_type']
         widgets = {
             'is_active': forms.CheckboxInput(),
-            'service_description': forms.Textarea(attrs={'rows': 5}),
+            'service_description': forms.Textarea(attrs={
+                'rows': 10,
+                'class': 'form-control',  # Bootstrap class
+                }),
             'report_type': forms.Select(attrs={'class': 'form-control'}),
-        }
+            }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -20,3 +23,12 @@ class ReportTypeForm(forms.ModelForm):
     class Meta:
         model = ReportType
         fields = ['name', 'description', 'is_active']
+        widgets = {
+            'is_active': forms.CheckboxInput(),
+            'description': forms.Textarea(attrs={
+                'rows': 10,
+                'class': 'form-control',  # Bootstrap class
+                })
+            }
+    def __str__(self):
+        return self.name
