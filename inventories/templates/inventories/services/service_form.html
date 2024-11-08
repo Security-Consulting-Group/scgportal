@@ -30,7 +30,6 @@
                 <label for="id_service_description">Description</label>
                 <textarea id="id_service_description" name="service_description" class="form-control">{{ form.service_description.value|default_if_none:'' }}</textarea>
             </div>
-            {{ form.is_active|as_crispy_field }}
         </div>
     </div>
 
