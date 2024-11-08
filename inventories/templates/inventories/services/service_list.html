@@ -15,6 +15,7 @@
         <tr>
             <th>Service ID</th>
             <th>Name</th>
+            <th>Type</th>
             <th>Is active</th>
             <th>Price</th>
             <th>Actions</th>
@@ -25,6 +26,7 @@
         <tr>
             <td><a href="{% url 'inventories:service_detail' service.pk %}">{{ service.service_id }}</a></td>
             <td>{{ service.service_name }}</td>
+            <td>{{ service.report_type }}</td>
             <td>{{ service.is_active }}</td>
             <td>{{ service.service_price }}</td>
             <td>
