@@ -31,7 +31,6 @@
             <td>${{ service.service_price }}</td>
             <td>
                 <a href="{% url 'inventories:service_update' service.pk %}" class="btn btn-warning btn-sm">Edit</a>
-                <a href="{% url 'inventories:service_delete' service.pk %}" class="btn btn-danger btn-sm">Delete</a>
             </td>
         </tr>
         {% empty %}
