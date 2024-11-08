@@ -13,6 +13,8 @@ urlpatterns = [
     path('profile/update/', ProfileUpdateView.as_view(), name='profile-update'),
     path('reset/<uidb64>/<token>/', CustomPasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     
+    path('tinymce/', include('tinymce.urls')),
+    
     # App-specific URLs
     path('accounts/', include('customers.urls'), name='customers'),
     path('inventories/', include('inventories.urls', namespace='inventories')),

@@ -1,23 +1,75 @@
-{% extends 'base.html' %}
-{% load static %}
-{% block content %}
+{% extends 'base.html' %} 
+{% load static %} 
 
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+    /* Add styling for Markdown content */
+    .markdown-content ul {
+        list-style-type: disc;
+        padding-left: 20px;
+        margin: 10px 0;
+    }
+    .markdown-content ul ul {
+        list-style-type: circle;
+    }
+    .markdown-content ol {
+        list-style-type: decimal;
+        padding-left: 20px;
+        margin: 10px 0;
+    }
+    .markdown-content h2 {
+        font-size: 1.5em;
+        margin: 15px 0;
+    }
+    .markdown-content p {
+        margin: 10px 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
 <h2>Report Type Details</h2>
 
 <hr>
 
 <div class="row">
     <div class="col-md-6">
-        <p><strong>Name:</strong> {{ reporttype.name }}</p>
-        <p><strong>Description:</strong> {{ reporttype.description }}</p>
-        <p><strong>Active:</strong> {{ reporttype.is_active }}</p>
+        <div class="mb-3">
+            <strong>Name:</strong> {{ reporttype.name }}
+        </div>
+
+        <div class="mb-3">
+            <strong>Description:</strong>
+            <div id="markdown-content" class="markdown-content"></div>
+        </div>
+
+        <div class="mb-3">
+            <strong>Active:</strong> {{ reporttype.is_active }}
+        </div>
     </div>
 </div>
 
 <hr>
 
 <div class="text-right mt-3">
-    <a href="{% url 'inventories:reporttype_list' %}" class="btn btn-secondary mt-3">Back to Report Type List</a>
+    <a href="{% url 'inventories:reporttype_list' %}" class="btn btn-secondary mt-3">
+        Back to Report Type List
+    </a>
 </div>
-
+{% endblock %}
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Configure marked to enable GitHub Flavored Markdown
+        marked.setOptions({
+            gfm: true,
+            breaks: true,
+            sanitize: true
+        });
+        
+        var content = `{{ reporttype.description|escapejs }}`;
+        document.getElementById('markdown-content').innerHTML = marked.parse(content);
+    });
+    </script>
 {% endblock %}

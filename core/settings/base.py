@@ -164,3 +164,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUDITLOG_INCLUDE_ALL_MODELS=True
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
+
+
+MARKDOWN_SAFE_MODE = True  # This would strip out potentially dangerous HTML
+MARKDOWN_EXTENSIONS = [
+    'markdown.extensions.fenced_code',
+    'markdown.extensions.tables',
+    'markdown.extensions.smarty',
+]
