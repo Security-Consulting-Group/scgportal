@@ -11,7 +11,6 @@ urlpatterns = [
     path('services/<int:pk>/', views.ServiceDetailView.as_view(), name='service_detail'),
     path('services/create/', views.ServiceCreateView.as_view(), name='service_create'),
     path('services/<int:pk>/update/', views.ServiceUpdateView.as_view(), name='service_update'),
-    path('services/<int:pk>/delete/', views.ServiceDeleteView.as_view(), name='service_delete'),
 
     # ReportType URLs
     path('reporttypes/', views.ReportTypeListView.as_view(), name='reporttype_list'),

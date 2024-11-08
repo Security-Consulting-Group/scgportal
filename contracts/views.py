@@ -35,7 +35,14 @@ class ContractListView(SelectedCustomerRequiredMixin, PermissionRequiredMixin, L
     permission_required = 'contracts.view_contract'
 
     def get_queryset(self):
+        # Update expired contracts first
+        Contract.objects.filter(
+            contract_end_date__lt=timezone.now().date(),
+            contract_status__in=['ACTIVE', 'TRIAL', 'NOTSTARTED']
+        ).update(contract_status='EXPIRED')
+
         return Contract.objects.filter(customer=self.request.selected_customer)
+
 
 class ContractDetailView(SelectedCustomerRequiredMixin, PermissionRequiredMixin, DetailView):
     model = Contract

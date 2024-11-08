@@ -53,27 +53,6 @@ class ServiceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
                       extra_tags='alert-primary')
         return response
 
-class ServiceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
-    model = Service
-    template_name = 'inventories/services/service_confirm_delete.html'
-    permission_required = 'inventories.delete_service'
-
-    def get_success_url(self):
-        return reverse_lazy('inventories:service_list')
-
-    def delete(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        success_url = self.get_success_url()
-        service_name = self.object.service_name
-        self.object.delete()
-        messages.warning(self.request,
-                         mark_safe(f"Service '<strong>{service_name}</strong>' has been deleted successfully."),
-                         extra_tags='alert-warning')
-        return HttpResponseRedirect(success_url)
-
-    def post(self, request, *args, **kwargs):
-        return self.delete(request, *args, **kwargs)
-
 # ReportType Views
 class ReportTypeListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     model = ReportType
