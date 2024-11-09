@@ -237,7 +237,8 @@ Located in `signatures/management/commands/upload_signatures.py`.
    ```
 4. Run the command:
    ```
-   docker exec -it scgportal-backend-1 python manage.py upload_signatures  --settings=core.settings.development output.json Nessus --settings=core.settings.production
+   docker exec -it scgportal-backend-1 sh
+   python manage.py upload_nessus_signatures output.json --settings=core.settings.production --batch_size=50
    ```
 
 ## 3. Nessus Scan Parser Process (convert from .nessus to .json)
