@@ -23,19 +23,16 @@
             {{ form.is_active|as_crispy_field }}
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-8">
             <div class="form-group">
                 <label for="id_service_description">Description</label>
                 <textarea id="id_service_description" 
                           name="service_description" 
                           class="form-control" 
-                          rows="10">{{ form.service_description.value|default_if_none:'' }}</textarea>
+                          rows="2">{{ form.service_description.value|default_if_none:'' }}</textarea>
             </div>
-        </div>
-
-        <div class="col-md-4">
             <div class="form-group">
-                <label for="id_service_details">Additional Details (Markdown)</label>
+                <label for="id_service_details">Service Details</label>
                 <textarea id="id_service_details" 
                           name="service_details" 
                           class="form-control">{{ form.service_details.value|default_if_none:'' }}</textarea>
