@@ -8,9 +8,7 @@
 {% endblock %}
 
 {% block content %}
-
 <h2>{% if form.instance.pk %}Edit{% else %}Create{% endif %} Service</h2>
-
 <hr>
 
 <form method="post">
@@ -25,10 +23,22 @@
             {{ form.is_active|as_crispy_field }}
         </div>
 
-        <div class="col-md-8">
+        <div class="col-md-4">
             <div class="form-group">
                 <label for="id_service_description">Description</label>
-                <textarea id="id_service_description" name="service_description" class="form-control">{{ form.service_description.value|default_if_none:'' }}</textarea>
+                <textarea id="id_service_description" 
+                          name="service_description" 
+                          class="form-control" 
+                          rows="10">{{ form.service_description.value|default_if_none:'' }}</textarea>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="form-group">
+                <label for="id_service_details">Additional Details (Markdown)</label>
+                <textarea id="id_service_details" 
+                          name="service_details" 
+                          class="form-control">{{ form.service_details.value|default_if_none:'' }}</textarea>
             </div>
         </div>
     </div>
@@ -40,14 +50,14 @@
         <a href="{% url 'inventories:service_list' %}" class="btn btn-secondary">Cancel</a>
     </div>
 </form>
-
 {% endblock %}
 
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        var simplemde = new SimpleMDE({
-            element: document.getElementById("id_service_description"),
+        // Initialize SimpleMDE only for details field
+        var detailsEditor = new SimpleMDE({
+            element: document.getElementById("id_service_details"),
             spellChecker: false,
             toolbar: ["bold", "italic", "heading", "|", 
                      "quote", "unordered-list", "ordered-list", "|",
