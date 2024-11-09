@@ -9,6 +9,7 @@ import time
 from tqdm import tqdm
 from functools import partial
 from django.conf import settings
+import ijson 
 
 def convert_date(date_string):
     if not date_string:
@@ -18,27 +19,20 @@ def convert_date(date_string):
     except ValueError:
         return None
 
-def process_chunk(chunk_file, batch_update_time):
-    # Re-initialize Django for this process
-    import django
-    django.setup()
-    
+def process_chunk(entries, batch_update_time):
     # Import the model here to ensure it's available in this process
     from signatures.models import NessusSignature
-    
-    with open(chunk_file, 'r') as file:
-        data = json.load(file)
-    
+
     processed_count = 0
     error_count = 0
-    
+
     with transaction.atomic():
-        for entry in data:
+        for entry in entries:
             try:
                 risk_factor = entry.get('risk_factor')
                 if risk_factor == "None":
                     risk_factor = "Informational"
-                    
+
                 NessusSignature.objects.update_or_create(
                     id=entry['id'],
                     defaults={
@@ -67,64 +61,63 @@ def process_chunk(chunk_file, batch_update_time):
                     }
                 )
                 processed_count += 1
+                if processed_count % 100 == 0:
+                    print(f"Processed {processed_count} signatures")
             except Exception as e:
                 error_count += 1
                 print(f"Error processing signature with ID: {entry.get('id', 'Unknown')}: {str(e)}")
-    
-    os.remove(chunk_file)
+
     return processed_count, error_count
 
 class Command(BaseCommand):
-    help = 'Upload Nessus signatures from a JSON file using sharding'
+    help = 'Upload Nessus signatures from a JSON file using streaming'
 
     def add_arguments(self, parser):
         parser.add_argument('json_file', type=str, help='Path to the JSON file')
-        parser.add_argument('--chunk_size', type=int, default=1000, help='Number of signatures per chunk')
-        parser.add_argument('--max_workers', type=int, default=multiprocessing.cpu_count(), help='Max number of worker processes')
+        parser.add_argument('--batch_size', type=int, default=100, help='Number of signatures per batch')
 
     def handle(self, *args, **options):
         json_file_path = options['json_file']
-        chunk_size = options['chunk_size']
-        max_workers = options['max_workers']
+        batch_size = options['batch_size']
 
-        self.stdout.write(self.style.SUCCESS(f"Starting sharded Nessus signature upload from {json_file_path}"))
+        self.stdout.write(self.style.SUCCESS(f"Starting streaming Nessus signature upload from {json_file_path}"))
 
         start_time = time.time()
         batch_update_time = timezone.now()
+        
+        total_processed = 0
+        total_errors = 0
+        current_batch = []
 
         try:
-            with open(json_file_path, 'r') as file:
-                data = json.load(file)
+            # Count total items first
+            self.stdout.write(self.style.SUCCESS("Counting total items..."))
+            total_items = sum(1 for _ in open(json_file_path, 'r')) - 2  # subtract 2 for the array brackets
+            self.stdout.write(self.style.SUCCESS(f"Total items to process: {total_items}"))
 
-            total_entries = len(data)
-            self.stdout.write(self.style.SUCCESS(f"Total entries in JSON file: {total_entries}"))
+            # Process the file in streaming mode
+            with open(json_file_path, 'rb') as file:
+                parser = ijson.items(file, 'item')
+                
+                for entry in tqdm(parser, total=total_items, desc="Processing signatures"):
+                    current_batch.append(entry)
+                    
+                    if len(current_batch) >= batch_size:
+                        processed, errors = process_chunk(current_batch, batch_update_time)
+                        total_processed += processed
+                        total_errors += errors
+                        current_batch = []
+                        
+                        self.stdout.write(self.style.SUCCESS(
+                            f"Progress: {total_processed}/{total_items} "
+                            f"({(total_processed/total_items*100):.2f}%)"
+                        ))
 
-            # Create tempshardsigs folder if it doesn't exist
-            shard_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', 'tempshardsigs')
-            os.makedirs(shard_folder, exist_ok=True)
-            self.stdout.write(self.style.SUCCESS(f"Using shard folder: {shard_folder}"))
-
-            # Create chunks
-            chunks = []
-            for i in range(0, total_entries, chunk_size):
-                chunk = data[i:i+chunk_size]
-                chunk_file = os.path.join(shard_folder, f'temp_chunk_{i}.json')
-                with open(chunk_file, 'w') as f:
-                    json.dump(chunk, f)
-                chunks.append(chunk_file)
-
-            # Process chunks in parallel
-            process_chunk_partial = partial(process_chunk, batch_update_time=batch_update_time)
-            with multiprocessing.Pool(max_workers) as pool:
-                results = list(tqdm(
-                    pool.imap(process_chunk_partial, chunks),
-                    total=len(chunks),
-                    desc="Processing chunks"
-                ))
-
-            # Aggregate results
-            total_processed = sum(r[0] for r in results)
-            total_errors = sum(r[1] for r in results)
+                # Process remaining items
+                if current_batch:
+                    processed, errors = process_chunk(current_batch, batch_update_time)
+                    total_processed += processed
+                    total_errors += errors
 
             end_time = time.time()
             duration = end_time - start_time
@@ -132,15 +125,11 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f"Processed Nessus signatures in {duration:.2f} seconds"))
             self.stdout.write(self.style.SUCCESS(f"Processed: {total_processed}, Errors: {total_errors}"))
 
-            # Import NessusSignature here for the final count
+            # Show final count
             from signatures.models import NessusSignature
-            self.stdout.write(self.style.SUCCESS(f"Total Nessus signatures in database: {NessusSignature.objects.count()}"))
+            self.stdout.write(self.style.SUCCESS(
+                f"Total Nessus signatures in database: {NessusSignature.objects.count()}"
+            ))
 
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"An error occurred during the upload process: {str(e)}"))
-        finally:
-            # Cleanup: remove any remaining shard files
-            for chunk_file in chunks:
-                if os.path.exists(chunk_file):
-                    os.remove(chunk_file)
-            self.stdout.write(self.style.SUCCESS("Cleaned up temporary shard files."))
