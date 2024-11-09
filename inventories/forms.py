@@ -4,15 +4,19 @@ from .models import Service, ReportType
 class ServiceForm(forms.ModelForm):
     class Meta:
         model = Service
-        fields = ['service_id', 'service_name', 'service_description', 'service_price', 'is_active', 'report_type']
+        fields = ['service_id', 'service_name', 'service_description', 'service_details', 'service_price', 'is_active', 'report_type']
         widgets = {
             'is_active': forms.CheckboxInput(),
             'service_description': forms.Textarea(attrs={
                 'rows': 10,
-                'class': 'form-control',  # Bootstrap class
-                }),
+                'class': 'form-control',
+            }),
+            'service_details': forms.Textarea(attrs={
+                'rows': 10,
+                'class': 'form-control',
+            }),
             'report_type': forms.Select(attrs={'class': 'form-control'}),
-            }
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
