@@ -133,7 +133,7 @@ Add to crontab (`crontab -e`):
 
 ### Deploy/Update Application
 ```bash
-git pull && docker compose down && docker compose up --build -d
+git pull && docker compose down && docker compose up --build -d && docker logs -f scgportal-backend-1
 ```
 
 ### Collect Static Files
@@ -223,7 +223,7 @@ This process imports a large JSON file containing the latest signatures from Nes
 Located in `signatures/management/commands/upload_signatures.py`.
 
 ### Usage
-1. Upload the cr_padron file to the Docker Host
+1. Upload the signatures file to the Docker Host
    ```
    scp -i ~/.ssh/scgportal.key output.json root@165.22.185.21:/root/scgportal/
    ```
