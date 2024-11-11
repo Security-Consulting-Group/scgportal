@@ -6,6 +6,7 @@ from django.http import HttpResponseRedirect
 from django.utils.safestring import mark_safe
 from .models import Service, ReportType
 from .forms import ServiceForm, ReportTypeForm
+from django.db.models import Q
 
 class InventorySelectionView(LoginRequiredMixin, TemplateView):
     template_name = 'inventories/inventory_selection.html'
@@ -18,7 +19,37 @@ class ServiceListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     permission_required = 'inventories.view_service'
     
     def get_queryset(self):
-        return Service.objects.all().order_by('service_id')
+        queryset = Service.objects.all().order_by('service_id')
+        
+        # Search filter
+        search_query = self.request.GET.get('search', '')
+        if search_query:
+            queryset = queryset.filter(
+                Q(service_id__icontains=search_query) |
+                Q(service_name__icontains=search_query)
+            )
+        
+        # Report Type filter
+        report_type = self.request.GET.get('report_type', '')
+        if report_type:
+            queryset = queryset.filter(report_type_id=report_type)
+            
+        # Active status filter (default to showing only active)
+        show_inactive = self.request.GET.get('show_inactive', '') == 'true'
+        if not show_inactive:
+            queryset = queryset.filter(is_active=True)
+            
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['report_types'] = ReportType.objects.filter(is_active=True)
+        context['current_filters'] = {
+            'search': self.request.GET.get('search', ''),
+            'report_type': self.request.GET.get('report_type', ''),
+            'show_inactive': self.request.GET.get('show_inactive', '') == 'true'
+        }
+        return context
 
 class ServiceDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
     model = Service
