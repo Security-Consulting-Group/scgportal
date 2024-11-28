@@ -217,10 +217,27 @@ class ContractDeleteView(SelectedCustomerRequiredMixin, PermissionRequiredMixin,
         self.object = self.get_object()
         success_url = self.get_success_url()
         contract_id = self.object.contract_id
-        self.object.delete()
-        messages.warning(self.request,
-                         mark_safe(f"Contract '<strong>{contract_id}</strong>' has been deleted successfully."),
-                         extra_tags='alert-warning')
+
+        try:
+            # Get all related ContractService objects and delete them first
+            self.object.contractservice_set.all().delete()
+            
+            # Delete any other related records
+            if hasattr(self.object, 'payments'):
+                self.object.payments.all().delete()
+                
+            # Finally delete the contract
+            self.object.delete()
+            
+            messages.warning(request,
+                           mark_safe(f"Contract '<strong>{contract_id}</strong>' has been deleted successfully."),
+                           extra_tags='alert-warning')
+        except Exception as e:
+            messages.error(request, f"Error deleting contract: {e}")
+            # Print detailed error for debugging
+            import traceback
+            print(traceback.format_exc())
+            
         return HttpResponseRedirect(success_url)
 
     def post(self, request, *args, **kwargs):

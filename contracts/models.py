@@ -36,6 +36,15 @@ class Contract(models.Model):
         if self.contract_end_date and self.contract_start_date and self.contract_end_date < self.contract_start_date:
             raise ValidationError("Contract end date cannot be before start date.")
 
+    def delete(self, *args, **kwargs):
+        # Disconnect any virtual reports before deletion
+        try:
+            from reports.models import SupportReport
+            SupportReport.objects.filter(contract=self).update(contract=None)
+        except:
+            pass  # If table doesn't exist, continue with deletion
+        super().delete(*args, **kwargs)
+
     def save(self, *args, **kwargs):
         if not self.contract_id:
             now = timezone.now()

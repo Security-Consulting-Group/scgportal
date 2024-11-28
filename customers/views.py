@@ -90,10 +90,18 @@ class CustomerDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
         self.object = self.get_object()
         success_url = self.get_success_url()
         customer_name = self.object.customer_name
-        self.object.delete()
-        messages.warning(self.request,
-                         mark_safe(f"Account <strong>{customer_name}</strong> has been deleted."),
-                         extra_tags='alert-warning')
+
+        try:
+            # The custom delete method in the Customer model will handle all deletions
+            self.object.delete()
+            messages.warning(self.request,
+                           mark_safe(f"Account <strong>{customer_name}</strong> has been deleted."),
+                           extra_tags='alert-warning')
+        except Exception as e:
+            messages.error(request, f"Error deleting customer: {e}")
+            import traceback
+            print(traceback.format_exc())
+            
         return HttpResponseRedirect(success_url)
 
     def post(self, request, *args, **kwargs):

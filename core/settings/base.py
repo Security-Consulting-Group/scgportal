@@ -96,10 +96,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
-DATABASE_ROUTERS = (
-    # 'django_tenants.routers.TenantSyncRouter',
-)
-
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 

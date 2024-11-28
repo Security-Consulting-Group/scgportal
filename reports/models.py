@@ -9,10 +9,10 @@ import uuid
 class BaseReport(models.Model):
     report_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, to_field='customer_id')
-    contract = models.ForeignKey('contracts.Contract', on_delete=models.CASCADE, null=True, blank=True, to_field='contract_id')
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, to_field='customer_id', db_constraint=False )
+    contract = models.ForeignKey('contracts.Contract', on_delete=models.DO_NOTHING, null=True, blank=True, to_field='contract_id', db_constraint=False)
     date = models.DateField(auto_now_add=True)
-    service = models.ForeignKey(Service, on_delete=models.PROTECT)
+    service = models.ForeignKey(Service, on_delete=models.PROTECT, db_constraint=False)
     
     class Meta:
         abstract = True
@@ -76,8 +76,16 @@ class BurpSuiteVulnerability(models.Model):
 class SupportReport(BaseReport):
     """Virtual report type to show engagement data"""
     class Meta:
-        managed = False  # This ensures Django won't create a DB table
-        default_permissions = ('view',)  # Only allow viewing
+        managed = False  # Keeps this as a virtual model
+        default_permissions = ('view',)
+        db_table = 'reports_supportreport'  # Add this
+        abstract = True  # Add this
+
+    def delete(self, *args, **kwargs):
+        pass  # Prevent deletion attempts
+
+    def save(self, *args, **kwargs):
+        pass  # Prevent save attempts
 
     @classmethod
     def generate_for_service(cls, service, customer):
